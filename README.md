@@ -20,6 +20,9 @@ and the Phase 3 dynamic customer landing page:
   licensed typography, motion rules, and Storybook component review.
 - customer-facing content discovery, seeded preview dishes, and a clearly
   browser-only cart with an explicit home-to-menu-to-cart route.
+- Phase 4 durable catalog schema, versioned migration, repeatable local seed,
+  volume-backed media validation/thumbnailing, read APIs, and server-enforced
+  administrator access/refresh tokens.
 
 The customer experience is an intentionally limited visual shell. Menu,
 customization, checkout, tracking, accounts, and administration are not yet
@@ -33,6 +36,10 @@ implemented and must not be represented as working product flows.
    Copy-Item .env.example .env
    ~~~
 
+   Before starting the backend, set a unique local `NOSH_JWT_SECRET` of at
+   least `32` bytes and a non-empty `NOSH_SEED_ADMIN_PASSWORD` in `.env`.
+   They are required environment configuration, not committed demo values.
+
 2. Start the full local stack.
 
    ~~~powershell
@@ -44,6 +51,13 @@ implemented and must not be represented as working product flows.
    - Customer shell: http://localhost:5173
    - API documentation: http://localhost:8000/docs
    - API readiness: http://localhost:8000/api/v1/health
+
+4. In a second terminal, apply the schema and seed the local demo.
+
+   ~~~powershell
+   docker compose exec backend uv run alembic upgrade head
+   docker compose exec backend uv run python -m app.commands.seed
+   ~~~
 
 To stop the stack, run:
 

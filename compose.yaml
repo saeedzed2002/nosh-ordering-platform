@@ -29,11 +29,15 @@ services:
       NOSH_ENVIRONMENT: development
       NOSH_DATABASE_URL: postgresql://${POSTGRES_USER:-nosh}:${POSTGRES_PASSWORD:-nosh_local_password}@postgres:5432/${POSTGRES_DB:-nosh}
       NOSH_CORS_ORIGINS: http://localhost:${FRONTEND_PORT:-5173}
+      NOSH_MEDIA_ROOT: /var/lib/nosh-media
+      NOSH_JWT_SECRET: ${NOSH_JWT_SECRET:?Set NOSH_JWT_SECRET in .env before starting the backend}
+      NOSH_SEED_ADMIN_PASSWORD: ${NOSH_SEED_ADMIN_PASSWORD:?Set NOSH_SEED_ADMIN_PASSWORD in .env before seeding}
     ports:
       - "${BACKEND_PORT:-8000}:8000"
     volumes:
       - ./backend:/app
       - backend-venv:/app/.venv
+      - media-data:/var/lib/nosh-media
     depends_on:
       postgres:
         condition: service_healthy
@@ -80,3 +84,4 @@ volumes:
   backend-venv:
   frontend-node-modules:
   postgres-data:
+  media-data:
