@@ -8,7 +8,7 @@ from sqlalchemy import select
 
 from app.core.config import Settings, get_settings
 from app.db.session import SessionDep
-from app.models import MediaAsset, PublicationState, RoleCode
+from app.models import MediaAsset, PublicationState, RoleCode, User
 from app.schemas.media import MediaAssetResponse
 from app.services.auth import require_roles
 from app.services.media import (
@@ -20,7 +20,9 @@ from app.services.media import (
 )
 
 router = APIRouter(prefix="/api/v1", tags=["Media"])
-AdminUserDep = Annotated[object, Depends(require_roles(RoleCode.ADMIN))]
+MediaManagerDep = Annotated[
+    User, Depends(require_roles(RoleCode.OWNER, RoleCode.MANAGER))
+]
 
 
 def serialize_media_asset(media: MediaAsset) -> MediaAssetResponse:
@@ -76,7 +78,9 @@ def read_public_thumbnail(
 
 
 @router.get("/admin/media", summary="List media metadata for an administrator")
-def list_admin_media(session: SessionDep, _: AdminUserDep) -> list[MediaAssetResponse]:
+def list_admin_media(
+    session: SessionDep, _: MediaManagerDep
+) -> list[MediaAssetResponse]:
     media_assets = session.scalars(
         select(MediaAsset).order_by(MediaAsset.created_at)
     ).all()
@@ -91,7 +95,7 @@ def read_original_media(
     media_id: UUID,
     session: SessionDep,
     settings: Annotated[Settings, Depends(get_settings)],
-    _: AdminUserDep,
+    _: MediaManagerDep,
 ) -> FileResponse:
     media = session.get(MediaAsset, media_id)
     if media is None:
@@ -114,7 +118,7 @@ def read_original_media(
 async def upload_media(
     session: SessionDep,
     settings: Annotated[Settings, Depends(get_settings)],
-    _: AdminUserDep,
+    _: MediaManagerDep,
     file: Annotated[
         UploadFile, File(description="A JPEG, PNG, or WebP file up to 5 MB")
     ],

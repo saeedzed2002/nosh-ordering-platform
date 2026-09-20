@@ -21,6 +21,7 @@ from app.services.auth import (
 )
 
 router = APIRouter(prefix="/api/v1/auth", tags=["Authentication"])
+STAFF_SIGN_IN_ROLES = frozenset({RoleCode.KITCHEN, RoleCode.MANAGER, RoleCode.OWNER})
 
 
 def serialize_current_user(user: User) -> CurrentUserResponse:
@@ -46,7 +47,7 @@ def sign_in_admin(
     if (
         user is None
         or not user.is_active
-        or RoleCode(user.role.code) != RoleCode.ADMIN
+        or RoleCode(user.role.code) not in STAFF_SIGN_IN_ROLES
         or not verify_password(credentials.password, user.password_hash)
     ):
         raise HTTPException(

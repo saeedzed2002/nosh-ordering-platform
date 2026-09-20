@@ -45,7 +45,7 @@ def test_seeded_catalog_is_available_from_versioned_api(seeded_client) -> None:
     }
 
 
-def test_admin_tokens_protect_media_and_refresh(seeded_client) -> None:
+def test_owner_tokens_protect_media_and_refresh(seeded_client) -> None:
     signed_in = seeded_client.post(
         "/api/v1/auth/admin/sign-in",
         json={"email": "owner@nosh.example", "password": "test-admin-password"},
@@ -58,7 +58,7 @@ def test_admin_tokens_protect_media_and_refresh(seeded_client) -> None:
         headers={"Authorization": f"Bearer {token_pair['access_token']}"},
     )
     assert current_user.status_code == 200
-    assert current_user.json()["role"] == "admin"
+    assert current_user.json()["role"] == "owner"
     assert seeded_client.get("/api/v1/admin/media").status_code == 401
 
     admin_media = seeded_client.get(
@@ -85,6 +85,46 @@ def test_admin_tokens_protect_media_and_refresh(seeded_client) -> None:
     assert refreshed_current_user.status_code == 200
 
 
+def test_staff_sign_in_and_media_permissions_follow_server_side_roles(
+    seeded_client,
+) -> None:
+    manager_sign_in = seeded_client.post(
+        "/api/v1/auth/admin/sign-in",
+        json={"email": "manager@nosh.example", "password": "test-admin-password"},
+    )
+    assert manager_sign_in.status_code == 200
+    manager_headers = {
+        "Authorization": f"Bearer {manager_sign_in.json()['access_token']}"
+    }
+    manager_identity = seeded_client.get("/api/v1/auth/me", headers=manager_headers)
+    assert manager_identity.json()["role"] == "manager"
+    assert (
+        seeded_client.get("/api/v1/admin/media", headers=manager_headers).status_code
+        == 200
+    )
+
+    kitchen_sign_in = seeded_client.post(
+        "/api/v1/auth/admin/sign-in",
+        json={"email": "kitchen@nosh.example", "password": "test-admin-password"},
+    )
+    assert kitchen_sign_in.status_code == 200
+    kitchen_headers = {
+        "Authorization": f"Bearer {kitchen_sign_in.json()['access_token']}"
+    }
+    kitchen_identity = seeded_client.get("/api/v1/auth/me", headers=kitchen_headers)
+    assert kitchen_identity.json()["role"] == "kitchen"
+    assert (
+        seeded_client.get("/api/v1/admin/media", headers=kitchen_headers).status_code
+        == 403
+    )
+
+    customer_sign_in = seeded_client.post(
+        "/api/v1/auth/admin/sign-in",
+        json={"email": "maya@nosh.example", "password": "test-admin-password"},
+    )
+    assert customer_sign_in.status_code == 401
+
+
 def test_non_admin_token_cannot_read_admin_media(
     seeded_client, seeded_settings
 ) -> None:
@@ -92,7 +132,7 @@ def test_non_admin_token_cannot_read_admin_media(
         customer = session.scalar(
             select(User)
             .options(joinedload(User.role))
-            .where(User.email == "maya@example.test")
+            .where(User.email == "maya@nosh.example")
         )
         token = create_token(
             user=customer,

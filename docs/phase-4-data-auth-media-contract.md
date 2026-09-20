@@ -25,7 +25,11 @@ or endpoints below are implemented yet.
 
 ## Authentication and authorization rules
 
-- Users have one server-side role: `customer`, `staff`, or `admin`.
+- Users have one server-side role: `customer`, `kitchen`, `manager`, or
+  `owner`. The initial protected sign-in accepts staff roles, while each route
+  declares the minimum permitted role. Media management is limited to
+  `manager` and `owner`; `kitchen` access remains limited to its later
+  operational-order scope.
 - Access and refresh tokens will be separate, short- and longer-lived JWTs.
   Refresh token rotation, revocation storage, password-reset flows, and public
   registration are explicitly outside the first authentication increment.

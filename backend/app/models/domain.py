@@ -26,8 +26,9 @@ from app.db.base import Base
 
 class RoleCode(StrEnum):
     CUSTOMER = "customer"
-    STAFF = "staff"
-    ADMIN = "admin"
+    KITCHEN = "kitchen"
+    MANAGER = "manager"
+    OWNER = "owner"
 
 
 class PublicationState(StrEnum):
@@ -56,6 +57,12 @@ class TimestampedUUIDMixin:
 
 class Role(TimestampedUUIDMixin, Base):
     __tablename__ = "roles"
+    __table_args__ = (
+        CheckConstraint(
+            "code IN ('customer', 'kitchen', 'manager', 'owner')",
+            name="code_allowed",
+        ),
+    )
 
     code: Mapped[RoleCode] = mapped_column(String(32), unique=True, nullable=False)
     label: Mapped[str] = mapped_column(String(80), nullable=False)
@@ -64,11 +71,14 @@ class Role(TimestampedUUIDMixin, Base):
 
 class User(TimestampedUUIDMixin, Base):
     __tablename__ = "users"
+    __table_args__ = (CheckConstraint("email = lower(email)", name="email_lower"),)
 
     email: Mapped[str] = mapped_column(String(320), unique=True, nullable=False)
     display_name: Mapped[str] = mapped_column(String(120), nullable=False)
     password_hash: Mapped[str] = mapped_column(String(512), nullable=False)
-    role_id: Mapped[UUID] = mapped_column(ForeignKey("roles.id"), nullable=False)
+    role_id: Mapped[UUID] = mapped_column(
+        ForeignKey("roles.id"), nullable=False, index=True
+    )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     role: Mapped[Role] = relationship(back_populates="users")
 
@@ -77,6 +87,8 @@ class Location(TimestampedUUIDMixin, Base):
     __tablename__ = "locations"
     __table_args__ = (
         CheckConstraint("slug = lower(slug)", name="location_slug_lower"),
+        CheckConstraint("preparation_minutes >= 0", name="preparation_non_negative"),
+        CheckConstraint("demo_capacity >= 0", name="capacity_non_negative"),
     )
 
     name: Mapped[str] = mapped_column(String(160), nullable=False)
@@ -105,10 +117,16 @@ class OperatingHour(TimestampedUUIDMixin, Base):
     __table_args__ = (
         UniqueConstraint("location_id", "weekday", name="location_weekday"),
         CheckConstraint("weekday >= 0 AND weekday <= 6", name="weekday_range"),
+        CheckConstraint(
+            "(is_closed = true AND opens_at IS NULL AND closes_at IS NULL) "
+            "OR (is_closed = false AND opens_at IS NOT NULL "
+            "AND closes_at IS NOT NULL AND opens_at < closes_at)",
+            name="valid_time_range",
+        ),
     )
 
     location_id: Mapped[UUID] = mapped_column(
-        ForeignKey("locations.id"), nullable=False
+        ForeignKey("locations.id"), nullable=False, index=True
     )
     weekday: Mapped[int] = mapped_column(Integer, nullable=False)
     opens_at: Mapped[time | None] = mapped_column(Time)
@@ -119,6 +137,19 @@ class OperatingHour(TimestampedUUIDMixin, Base):
 
 class MediaAsset(TimestampedUUIDMixin, Base):
     __tablename__ = "media_assets"
+    __table_args__ = (
+        CheckConstraint("byte_size > 0", name="byte_size_positive"),
+        CheckConstraint("width > 0 AND height > 0", name="dimensions_positive"),
+        CheckConstraint(
+            "focal_point_x >= 0 AND focal_point_x <= 100 "
+            "AND focal_point_y >= 0 AND focal_point_y <= 100",
+            name="focal_point_range",
+        ),
+        CheckConstraint(
+            "publication_state IN ('draft', 'published')",
+            name="publication_state_allowed",
+        ),
+    )
 
     original_filename: Mapped[str] = mapped_column(String(255), nullable=False)
     original_path: Mapped[str] = mapped_column(String(512), unique=True, nullable=False)
@@ -146,11 +177,14 @@ class Category(TimestampedUUIDMixin, Base):
     __tablename__ = "categories"
     __table_args__ = (
         CheckConstraint("slug = lower(slug)", name="category_slug_lower"),
+        CheckConstraint("display_order >= 0", name="display_order_non_negative"),
     )
 
     name: Mapped[str] = mapped_column(String(120), nullable=False)
     slug: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)
-    media_id: Mapped[UUID | None] = mapped_column(ForeignKey("media_assets.id"))
+    media_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("media_assets.id"), index=True
+    )
     description: Mapped[str | None] = mapped_column(Text)
     display_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     is_published: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
@@ -163,12 +197,22 @@ class MenuItem(TimestampedUUIDMixin, Base):
     __table_args__ = (
         CheckConstraint("slug = lower(slug)", name="menu_item_slug_lower"),
         CheckConstraint("base_price_minor >= 0", name="base_price_non_negative"),
+        CheckConstraint(
+            "length(currency_code) = 3 AND currency_code = upper(currency_code)",
+            name="currency_code_uppercase",
+        ),
+        CheckConstraint(
+            "publication_state IN ('draft', 'published')",
+            name="publication_state_allowed",
+        ),
     )
 
     category_id: Mapped[UUID] = mapped_column(
-        ForeignKey("categories.id"), nullable=False
+        ForeignKey("categories.id"), nullable=False, index=True
     )
-    media_id: Mapped[UUID | None] = mapped_column(ForeignKey("media_assets.id"))
+    media_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("media_assets.id"), index=True
+    )
     name: Mapped[str] = mapped_column(String(160), nullable=False)
     slug: Mapped[str] = mapped_column(String(160), unique=True, nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
@@ -190,13 +234,22 @@ class MenuItemAvailability(TimestampedUUIDMixin, Base):
     __tablename__ = "menu_item_availability"
     __table_args__ = (
         UniqueConstraint("location_id", "menu_item_id", name="location_item"),
+        CheckConstraint(
+            "state IN ('available', 'temporarily_unavailable', 'scheduled')",
+            name="state_allowed",
+        ),
+        CheckConstraint(
+            "available_from IS NULL OR available_until IS NULL "
+            "OR available_until > available_from",
+            name="valid_schedule_range",
+        ),
     )
 
     location_id: Mapped[UUID] = mapped_column(
         ForeignKey("locations.id"), nullable=False
     )
     menu_item_id: Mapped[UUID] = mapped_column(
-        ForeignKey("menu_items.id"), nullable=False
+        ForeignKey("menu_items.id"), nullable=False, index=True
     )
     state: Mapped[AvailabilityState] = mapped_column(
         String(32), nullable=False, default=AvailabilityState.AVAILABLE
@@ -209,6 +262,11 @@ class CuratedCollection(TimestampedUUIDMixin, Base):
     __tablename__ = "curated_collections"
     __table_args__ = (
         CheckConstraint("slug = lower(slug)", name="collection_slug_lower"),
+        CheckConstraint("display_order >= 0", name="display_order_non_negative"),
+        CheckConstraint(
+            "publication_state IN ('draft', 'published')",
+            name="publication_state_allowed",
+        ),
     )
 
     name: Mapped[str] = mapped_column(String(160), nullable=False)
@@ -230,7 +288,7 @@ class CollectionMenuItem(TimestampedUUIDMixin, Base):
         ForeignKey("curated_collections.id"), nullable=False
     )
     menu_item_id: Mapped[UUID] = mapped_column(
-        ForeignKey("menu_items.id"), nullable=False
+        ForeignKey("menu_items.id"), nullable=False, index=True
     )
     display_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
@@ -256,7 +314,7 @@ class MenuItemAllergen(TimestampedUUIDMixin, Base):
         ForeignKey("menu_items.id"), nullable=False
     )
     allergen_id: Mapped[UUID] = mapped_column(
-        ForeignKey("allergens.id"), nullable=False
+        ForeignKey("allergens.id"), nullable=False, index=True
     )
     note: Mapped[str | None] = mapped_column(String(500))
 
@@ -268,10 +326,11 @@ class OptionGroup(TimestampedUUIDMixin, Base):
         CheckConstraint(
             "maximum_selections >= minimum_selections", name="maximum_gte_minimum"
         ),
+        CheckConstraint("display_order >= 0", name="display_order_non_negative"),
     )
 
     menu_item_id: Mapped[UUID] = mapped_column(
-        ForeignKey("menu_items.id"), nullable=False
+        ForeignKey("menu_items.id"), nullable=False, index=True
     )
     name: Mapped[str] = mapped_column(String(160), nullable=False)
     minimum_selections: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
@@ -287,10 +346,11 @@ class Option(TimestampedUUIDMixin, Base):
     __tablename__ = "options"
     __table_args__ = (
         CheckConstraint("price_delta_minor >= 0", name="price_delta_non_negative"),
+        CheckConstraint("display_order >= 0", name="display_order_non_negative"),
     )
 
     option_group_id: Mapped[UUID] = mapped_column(
-        ForeignKey("option_groups.id"), nullable=False
+        ForeignKey("option_groups.id"), nullable=False, index=True
     )
     name: Mapped[str] = mapped_column(String(160), nullable=False)
     price_delta_minor: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
@@ -301,14 +361,25 @@ class Option(TimestampedUUIDMixin, Base):
 
 class HomeContent(TimestampedUUIDMixin, Base):
     __tablename__ = "home_content"
+    __table_args__ = (
+        CheckConstraint("display_order >= 0", name="display_order_non_negative"),
+        CheckConstraint(
+            "publication_state IN ('draft', 'published')",
+            name="publication_state_allowed",
+        ),
+    )
 
     content_key: Mapped[str] = mapped_column(String(80), unique=True, nullable=False)
     heading: Mapped[str] = mapped_column(String(240), nullable=False)
     supporting_copy: Mapped[str] = mapped_column(Text, nullable=False)
     action_label: Mapped[str | None] = mapped_column(String(100))
     action_href: Mapped[str | None] = mapped_column(String(255))
-    media_id: Mapped[UUID | None] = mapped_column(ForeignKey("media_assets.id"))
-    menu_item_id: Mapped[UUID | None] = mapped_column(ForeignKey("menu_items.id"))
+    media_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("media_assets.id"), index=True
+    )
+    menu_item_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("menu_items.id"), index=True
+    )
     display_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     publication_state: Mapped[PublicationState] = mapped_column(
         String(16), nullable=False, default=PublicationState.DRAFT

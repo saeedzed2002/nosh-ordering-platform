@@ -121,13 +121,13 @@ def seed_database(session: Session, settings: Settings) -> None:
     }
 
     for email, display_name, role_code in [
-        ("owner@nosh.example", "Nosh owner", RoleCode.ADMIN),
-        ("manager@nosh.example", "Nosh manager", RoleCode.STAFF),
-        ("kitchen@nosh.example", "Nosh kitchen", RoleCode.STAFF),
-        ("maya@example.test", "Maya Reed", RoleCode.CUSTOMER),
-        ("jordan@example.test", "Jordan Bell", RoleCode.CUSTOMER),
+        ("owner@nosh.example", "Nosh owner", RoleCode.OWNER),
+        ("manager@nosh.example", "Nosh manager", RoleCode.MANAGER),
+        ("kitchen@nosh.example", "Nosh kitchen", RoleCode.KITCHEN),
+        ("maya@nosh.example", "Maya Reed", RoleCode.CUSTOMER),
+        ("jordan@nosh.example", "Jordan Bell", RoleCode.CUSTOMER),
     ]:
-        find_or_create(
+        user = find_or_create(
             session,
             User,
             User.email,
@@ -139,6 +139,8 @@ def seed_database(session: Session, settings: Settings) -> None:
             role_id=roles[role_code].id,
             is_active=True,
         )
+        if user.role_id != roles[role_code].id:
+            user.role_id = roles[role_code].id
 
     location = find_or_create(
         session,
@@ -161,8 +163,8 @@ def seed_database(session: Session, settings: Settings) -> None:
         find_or_create(
             session,
             OperatingHour,
-            OperatingHour.weekday,
-            weekday,
+            OperatingHour.id,
+            seeded_id(f"hour:market-quarter:{weekday}"),
             id=seeded_id(f"hour:market-quarter:{weekday}"),
             location_id=location.id,
             weekday=weekday,
@@ -411,8 +413,8 @@ def seed_database(session: Session, settings: Settings) -> None:
         find_or_create(
             session,
             MenuItemAvailability,
-            MenuItemAvailability.menu_item_id,
-            item.id,
+            MenuItemAvailability.id,
+            seeded_id(f"availability:market-quarter:{slug}"),
             id=seeded_id(f"availability:market-quarter:{slug}"),
             location_id=location.id,
             menu_item_id=item.id,

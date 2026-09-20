@@ -1,6 +1,6 @@
 # Nosh backend
 
-The backend now contains the Phase 4 data, media, and administrator-authentication
+The backend now contains the Phase 4 data, media, and role-based staff-authentication
 foundation. Checkout, orders, customer accounts, and administrative editing screens
 remain later roadmap work.
 
