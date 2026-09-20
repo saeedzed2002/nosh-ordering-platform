@@ -6,12 +6,15 @@ claim production readiness.
 
 ## Current milestone
 
-This repository currently implements the Phase 0 foundation:
+This repository currently implements the Phase 0 foundation and the Phase 1
+experience/information-architecture contract:
 
 - independent React/Vite and FastAPI applications;
 - a PostgreSQL-backed readiness endpoint;
 - Docker Compose local development with hot reload;
 - baseline formatting, linting, unit tests, and GitHub Actions.
+- defined customer journey, administrator workflows, route map, terminology,
+  failure states, content inventory, and deterministic future seed-data shape.
 
 The customer experience is an intentionally limited visual shell. Menu,
 customization, checkout, tracking, accounts, and administration are not yet
@@ -70,8 +73,9 @@ uv run pytest -q
 - The initial customer language is English LTR.
 - The initial demo has one fictional location.
 - Payment and fulfillment are simulated in later phases.
-- A GitHub remote has not been supplied, so this repository cannot be pushed
-  until the user provides one.
+- The `origin` remote is connected to the private GitHub repository. Local
+  validation remains distinct from GitHub Actions and production evidence.
 
 See docs/phase-0-foundation.md for architectural choices and explicit
-assumptions.
+assumptions, and docs/phase-1-experience-information-architecture.md for the
+planned customer/admin behavior and seed-data contract.

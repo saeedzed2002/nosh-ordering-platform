@@ -35,8 +35,9 @@ orchestration can distinguish a process failure from a database failure.
 - No customer identity, admin identity, JWT, or persistence models exist yet.
 - No menu item, availability, order, payment, tracking, review, media, or
   promotion behavior exists yet.
-- No remote repository, deployment, paid service, or public domain is
-  configured.
+- No deployment, paid service, or public domain is configured. The private
+  GitHub `origin` remote is connected; a successful push is not treated as
+  production or CI evidence.
 - The generated food image is an original local development visual asset; it
   must not be presented as a real restaurant photo or evidence of a live
   service.
