@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
   ArrowDown,
@@ -100,13 +100,10 @@ function App() {
     };
   }, []);
 
-  const featuredDishes = useMemo(
-    () =>
-      activeCategory === "all"
-        ? menuPreviewDishes
-        : menuPreviewDishes.filter((dish) => dish.category === activeCategory),
-    [activeCategory],
-  );
+  const featuredDishes =
+    activeCategory === "all"
+      ? menuPreviewDishes
+      : menuPreviewDishes.filter((dish) => dish.category === activeCategory);
   const cartItems = menuPreviewDishes
     .filter((dish) => cart[dish.id] !== undefined)
     .map((dish) => ({ dish, quantity: cart[dish.id] }));
@@ -132,12 +129,14 @@ function App() {
   }
 
   function addDish(dish: MenuPreviewDish) {
-    const quantity = cart[dish.id] ?? 0;
+    setCart((currentCart) => {
+      const quantity = currentCart[dish.id] ?? 0;
 
-    setCart((currentCart) => ({
-      ...currentCart,
-      [dish.id]: Math.min(quantity + 1, 9),
-    }));
+      return {
+        ...currentCart,
+        [dish.id]: Math.min(quantity + 1, 9),
+      };
+    });
     setNotice({
       title: "Added to your cart",
       description: `${dish.name} is ready to review in the local demo cart.`,
