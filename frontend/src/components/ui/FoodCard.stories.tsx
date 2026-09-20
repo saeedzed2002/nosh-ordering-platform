@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 
-import heroImage from "../../assets/nosh-hero-food.png";
+import heroImage from "../../assets/nosh-hero-food.webp";
 
 import { FoodCard } from "./FoodCard";
 

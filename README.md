@@ -7,8 +7,8 @@ claim production readiness.
 ## Current milestone
 
 This repository currently implements the Phase 0 foundation, the Phase 1
-experience/information-architecture contract, and the Phase 2 component
-foundation:
+experience/information-architecture contract, the Phase 2 component foundation,
+and the Phase 3 dynamic customer landing page:
 
 - independent React/Vite and FastAPI applications;
 - a PostgreSQL-backed readiness endpoint;
@@ -18,6 +18,8 @@ foundation:
   failure states, content inventory, and deterministic future seed-data shape.
 - reusable accessible controls, status states, focus-managed overlays, local
   licensed typography, motion rules, and Storybook component review.
+- customer-facing content discovery, seeded preview dishes, and a clearly
+  browser-only cart with an explicit home-to-menu-to-cart route.
 
 The customer experience is an intentionally limited visual shell. Menu,
 customization, checkout, tracking, accounts, and administration are not yet
@@ -82,4 +84,5 @@ uv run pytest -q
 See docs/phase-0-foundation.md for architectural choices and explicit
 assumptions, and docs/phase-1-experience-information-architecture.md for the
 planned customer/admin behavior and seed-data contract. See
-docs/phase-2-design-system.md for component and interaction conventions.
+docs/phase-2-design-system.md for component and interaction conventions, and
+docs/phase-3-customer-landing.md for the dynamic landing-page contract.

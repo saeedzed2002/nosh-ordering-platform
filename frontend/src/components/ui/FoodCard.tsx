@@ -4,20 +4,24 @@ import { Button } from "./Button";
 import { StatusBadge, type StatusTone } from "./StatusBadge";
 
 type FoodCardProps = {
+  actionLabel?: string;
   alt: string;
   description: string;
   image: string;
   name: string;
+  onAction?: () => void;
   price: string;
   status?: StatusTone;
   tags?: string[];
 };
 
 export function FoodCard({
+  actionLabel,
   alt,
   description,
   image,
   name,
+  onAction,
   price,
   status = "available",
   tags = [],
@@ -41,8 +45,8 @@ export function FoodCard({
             {canOrder ? "Available" : "Unavailable"}
           </StatusBadge>
         </div>
-        <Button disabled={!canOrder} variant="secondary">
-          View dish <ArrowUpRight aria-hidden="true" />
+        <Button disabled={!canOrder} variant="secondary" onClick={onAction}>
+          {actionLabel ?? (canOrder ? "View dish" : "Unavailable")} <ArrowUpRight aria-hidden="true" />
         </Button>
       </div>
     </article>
