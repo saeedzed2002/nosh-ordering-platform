@@ -6,8 +6,9 @@ claim production readiness.
 
 ## Current milestone
 
-This repository currently implements the Phase 0 foundation and the Phase 1
-experience/information-architecture contract:
+This repository currently implements the Phase 0 foundation, the Phase 1
+experience/information-architecture contract, and the Phase 2 component
+foundation:
 
 - independent React/Vite and FastAPI applications;
 - a PostgreSQL-backed readiness endpoint;
@@ -15,6 +16,8 @@ experience/information-architecture contract:
 - baseline formatting, linting, unit tests, and GitHub Actions.
 - defined customer journey, administrator workflows, route map, terminology,
   failure states, content inventory, and deterministic future seed-data shape.
+- reusable accessible controls, status states, focus-managed overlays, local
+  licensed typography, motion rules, and Storybook component review.
 
 The customer experience is an intentionally limited visual shell. Menu,
 customization, checkout, tracking, accounts, and administration are not yet
@@ -78,4 +81,5 @@ uv run pytest -q
 
 See docs/phase-0-foundation.md for architectural choices and explicit
 assumptions, and docs/phase-1-experience-information-architecture.md for the
-planned customer/admin behavior and seed-data contract.
+planned customer/admin behavior and seed-data contract. See
+docs/phase-2-design-system.md for component and interaction conventions.

@@ -6,6 +6,7 @@
 # JavaScript
 node_modules/
 dist/
+storybook-static/
 coverage/
 playwright-report/
 test-results/
