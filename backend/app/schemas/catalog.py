@@ -36,6 +36,7 @@ class LocationResponse(BaseModel):
     name: str
     slug: str
     address_text: str
+    contact_phone: str
     pickup_instructions: str | None
     delivery_area_text: str | None
     pickup_available: bool

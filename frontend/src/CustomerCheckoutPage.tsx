@@ -1,12 +1,17 @@
 import {
   ArrowLeft,
   CheckCircle2,
+  Circle,
   CircleAlert,
   Clock3,
   LoaderCircle,
   MapPin,
+  Phone,
+  RefreshCw,
   ReceiptText,
+  Route,
   ShoppingBag,
+  Truck,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
@@ -22,6 +27,13 @@ import {
   type CustomerPaymentScenario,
 } from "./customerCheckout";
 import { formatCustomerPrice, useCustomerCatalog } from "./customerCatalog";
+import {
+  isTrackingIssue,
+  trackingStatusDescription,
+  trackingStatusLabel,
+  trackingStepState,
+  trackingSteps,
+} from "./customerTracking";
 
 type CheckoutForm = {
   deliveryAddress: string;
@@ -262,6 +274,9 @@ export function CustomerOrderConfirmationPage() {
   const { publicReference } = useParams();
   const [receipt, setReceipt] = useState<CustomerOrderReceipt | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [refreshWarning, setRefreshWarning] = useState<string | null>(null);
+  const [lastCheckedAt, setLastCheckedAt] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
@@ -269,21 +284,51 @@ export function CustomerOrderConfirmationPage() {
       setError("An order reference is required to open this receipt.");
       return;
     }
-    const controller = new AbortController();
+    let active = true;
+    let hasLoaded = false;
+    let activeRequest: AbortController | null = null;
     setReceipt(null);
     setError(null);
-    void readCustomerOrder(publicReference, controller.signal)
-      .then((nextReceipt) => {
-        if (!controller.signal.aborted) {
+    setRefreshWarning(null);
+    setLastCheckedAt(null);
+
+    const refreshReceipt = async () => {
+      activeRequest?.abort();
+      const controller = new AbortController();
+      activeRequest = controller;
+      setIsRefreshing(true);
+      try {
+        const nextReceipt = await readCustomerOrder(publicReference, controller.signal);
+        if (active && activeRequest === controller) {
           setReceipt(nextReceipt);
+          setError(null);
+          setRefreshWarning(null);
+          setLastCheckedAt(new Date().toISOString());
+          hasLoaded = true;
         }
-      })
-      .catch((requestError: unknown) => {
-        if (!controller.signal.aborted) {
-          setError(requestError instanceof Error ? requestError.message : "This receipt could not be opened.");
+      } catch (requestError: unknown) {
+        if (active && !controller.signal.aborted && activeRequest === controller) {
+          const message = requestError instanceof Error ? requestError.message : "This receipt could not be opened.";
+          if (hasLoaded) {
+            setRefreshWarning("The latest kitchen update could not be checked. The last confirmed status is still shown.");
+          } else {
+            setError(message);
+          }
         }
-      });
-    return () => controller.abort();
+      } finally {
+        if (active && activeRequest === controller) {
+          setIsRefreshing(false);
+        }
+      }
+    };
+
+    void refreshReceipt();
+    const poller = window.setInterval(() => { void refreshReceipt(); }, 15_000);
+    return () => {
+      active = false;
+      activeRequest?.abort();
+      window.clearInterval(poller);
+    };
   }, [attempt, publicReference]);
 
   return (
@@ -292,17 +337,32 @@ export function CustomerOrderConfirmationPage() {
       <main>
         {!receipt && !error ? <section className="customer-receipt-loading"><LoaderCircle aria-hidden="true" /><p>Opening your saved order receipt…</p></section> : null}
         {error ? <section className="customer-checkout-empty" role="alert"><CircleAlert aria-hidden="true" /><h1>This order receipt could not be opened.</h1><p>{error}</p><Button variant="secondary" onClick={() => setAttempt((current) => current + 1)}>Try again</Button><Link className="nosh-button" data-size="default" data-variant="primary" to="/menu">Back to menu</Link></section> : null}
-        {receipt ? <section className="customer-receipt">
-          <header><p className="eyebrow"><CheckCircle2 aria-hidden="true" /> Local-demo order confirmed</p><h1>Your order is with the kitchen.</h1><p>The kitchen has saved the price, selected choices, fulfilment details, and confirmation below. Refreshing this page reads the same receipt without exposing private contact or address data.</p></header>
+        {receipt ? <section className="customer-receipt customer-tracker">
+          <header><p className="eyebrow"><Route aria-hidden="true" /> Local-demo order tracker</p><h1>{trackingStatusLabel(receipt.status)}.</h1><p>{trackingStatusDescription(receipt.status)} This page checks the kitchen for an update every 15 seconds; it does not show a fabricated courier map or live GPS location.</p></header>
+          <section className={isTrackingIssue(receipt.status) ? "customer-tracker-status issue" : "customer-tracker-status"} aria-live="polite">
+            <div><span>Current status</span><strong>{trackingStatusLabel(receipt.status)}</strong><p>{receipt.status_events.at(-1)?.note ?? trackingStatusDescription(receipt.status)}</p></div>
+            <div className="customer-tracker-status-actions"><small>{lastCheckedAt ? `Last checked ${formatMoment(lastCheckedAt)}` : "Checking the kitchen…"}</small><Button className="customer-tracker-refresh" loading={isRefreshing} size="compact" variant="quiet" onClick={() => setAttempt((current) => current + 1)}><RefreshCw aria-hidden="true" /> Refresh</Button></div>
+          </section>
+          {refreshWarning ? <p className="customer-tracker-warning" role="status">{refreshWarning}</p> : null}
+          <section className="customer-tracker-progress" aria-label="Order progress">
+            <p className="eyebrow">Order journey</p>
+            <ol>
+              {trackingSteps(receipt.fulfillment_method).map((step) => {
+                const state = trackingStepState(receipt.status, receipt.fulfillment_method, step.status);
+                return <li key={step.status} className={state} aria-current={state === "current" ? "step" : undefined}><span>{state === "complete" ? <CheckCircle2 aria-hidden="true" /> : <Circle aria-hidden="true" />}</span><strong>{step.label}</strong></li>;
+              })}
+            </ol>
+          </section>
           <div className="customer-receipt-workspace">
             <section className="customer-receipt-card">
-              <div className="customer-receipt-reference"><span>Order reference</span><strong>{receipt.public_reference}</strong><small>{receipt.status === "scheduled" ? "Scheduled" : "Submitted"} · {formatMoment(receipt.scheduled_for ?? receipt.created_at)}</small></div>
+              <div className="customer-receipt-reference"><span>Order reference</span><strong>{receipt.public_reference}</strong><small>{trackingStatusLabel(receipt.status)} · {formatMoment(receipt.scheduled_for ?? receipt.created_at)}</small></div>
               <ReceiptLines receipt={receipt} />
               <dl className="customer-receipt-totals"><div><dt>Subtotal</dt><dd>{formatCustomerPrice(receipt.subtotal_minor, receipt.currency_code)}</dd></div>{receipt.promotion_discount_minor ? <div><dt>{receipt.promotion_code ?? "Promotion"}</dt><dd>−{formatCustomerPrice(receipt.promotion_discount_minor, receipt.currency_code)}</dd></div> : null}<div className="total"><dt>Total</dt><dd>{formatCustomerPrice(receipt.total_minor, receipt.currency_code)}</dd></div></dl>
               <p className="customer-receipt-payment">{receipt.payment_message}</p>
             </section>
-            <aside className="customer-receipt-details"><div><MapPin aria-hidden="true" /><span>From</span><strong>{receipt.location_name}</strong><p>{receipt.location_address}</p></div><div><Clock3 aria-hidden="true" /><span>{receipt.fulfillment_method === "delivery" ? "Delivery" : "Pickup"}</span><strong>{receipt.fulfillment_method === "delivery" ? "Delivery details saved with the kitchen" : "Collect from the kitchen counter"}</strong><p>Private address and instruction details are not shown on this public receipt.</p></div><div><ReceiptText aria-hidden="true" /><span>Contact</span><strong>Contact details saved</strong><p>Private recipient information is not shown on this public receipt.</p></div></aside>
+            <aside className="customer-receipt-details"><div><MapPin aria-hidden="true" /><span>Kitchen location</span><strong>{receipt.location_name}</strong><p>{receipt.location_address}</p></div><div><Clock3 aria-hidden="true" /><span>Kitchen estimate</span><strong>{receipt.estimated_fulfillment_at ? formatMoment(receipt.estimated_fulfillment_at) : `About ${receipt.preparation_minutes} min`}</strong><p>{receipt.scheduled_for ? "Prepared for the selected time." : `Initial estimate based on about ${receipt.preparation_minutes} minutes of kitchen preparation.`}</p></div><div>{receipt.fulfillment_method === "delivery" ? <Truck aria-hidden="true" /> : <ReceiptText aria-hidden="true" />}<span>{receipt.fulfillment_method === "delivery" ? "Delivery handoff" : "Pickup instructions"}</span><strong>{receipt.fulfillment_method === "delivery" ? "Courier updates are recorded by the kitchen" : "Collect from the kitchen counter"}</strong><p>{receipt.fulfillment_method === "delivery" ? receipt.delivery_area ?? "Delivery details are saved with the kitchen." : receipt.pickup_instructions ?? "Follow the kitchen counter instructions when you arrive."}</p></div><div><Phone aria-hidden="true" /><span>Kitchen contact</span><strong>{receipt.contact_phone}</strong><p><a href={`tel:${receipt.contact_phone.replaceAll(/[^+\d]/g, "")}`}>Call the local-demo kitchen</a></p></div></aside>
           </div>
+          <section className="customer-tracker-timeline" aria-labelledby="order-timeline-title"><div><p className="eyebrow">Recorded updates</p><h2 id="order-timeline-title">A clear history of this order.</h2></div><ol>{receipt.status_events.map((event, index) => <li key={`${event.status}-${event.created_at}-${index}`}><span><CheckCircle2 aria-hidden="true" /></span><div><strong>{trackingStatusLabel(event.status)}</strong><time dateTime={event.created_at}>{formatMoment(event.created_at)}</time><p>{event.note}</p></div></li>)}</ol></section>
           <Link className="nosh-button" data-size="default" data-variant="primary" to="/menu">Return to menu</Link>
         </section> : null}
       </main>

@@ -12,7 +12,7 @@ the Phase 3 dynamic customer landing page, the Phase 4 durable backend
 foundation, the Phase 5 local administration workflow, the Phase 6 menu
 administration workflow, the Phase 7 customer menu/discovery workflow, and the
 Phase 8 trustworthy-cart workflow, and the Phase 9 checkout-and-confirmation
-workflow:
+workflow, and the Phase 10 customer-tracker-and-order-lifecycle workflow:
 
 - independent React/Vite and FastAPI applications;
 - a PostgreSQL-backed readiness endpoint;
@@ -51,11 +51,16 @@ workflow:
   fulfilment, payment, and status snapshots; an idempotency key prevents a
   duplicate order. The confirmation receipt is refresh-safe and deliberately
   omits private contact, address, and instruction data from its public route.
+- Phase 10 keeps `/orders/{publicReference}` as a customer-safe tracker. It
+  polls lightly for staff-recorded lifecycle changes, shows the distinct pickup
+  or delivery journey, timestamps, initial kitchen estimate, location,
+  restaurant contact, and customer-safe handoff instructions. It explicitly
+  does not claim live courier GPS or a map.
 
 Customer menu discovery, dish customization, the local cart, checkout, and
-order confirmation are implemented. Tracking, customer accounts, real payments,
-real delivery integration, and customer reviews are not yet implemented and
-must not be represented as working product flows.
+order tracking are implemented. The staff order desk, customer accounts, real
+payments, real delivery integration, and customer reviews are not yet
+implemented and must not be represented as working product flows.
 
 ## Local run
 
@@ -123,7 +128,8 @@ uv run pytest -q
 - The initial demo has one fictional location.
 - Payment and fulfillment are simulated; no card data is accepted or stored.
 - A public order reference is not an authorization credential. The public
-  receipt excludes private recipient, address, and instruction snapshots.
+  tracker excludes private recipient, delivery-address, and instruction
+  snapshots while exposing only the restaurant's fictional local-demo contact.
 - The `origin` remote is connected to the private GitHub repository. Local
   validation remains distinct from GitHub Actions and production evidence.
 
@@ -137,4 +143,5 @@ docs/phase-6-menu-administration.md for the menu administration contract and
 docs/phase-7-customer-menu.md for the live menu/discovery contract. See
 docs/phase-8-trustworthy-cart.md for the cart and server-quote contract, and
 docs/phase-9-checkout-and-confirmation.md for order transaction and receipt
-boundaries.
+boundaries. See docs/phase-10-customer-tracker-and-lifecycle.md for the
+tracking and lifecycle boundaries.

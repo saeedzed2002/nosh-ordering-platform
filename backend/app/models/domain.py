@@ -139,6 +139,9 @@ class Location(TimestampedUUIDMixin, Base):
     name: Mapped[str] = mapped_column(String(160), nullable=False)
     slug: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)
     address_text: Mapped[str] = mapped_column(Text, nullable=False)
+    contact_phone: Mapped[str] = mapped_column(
+        String(30), server_default="+1 (555) 010-0195", nullable=False
+    )
     pickup_instructions: Mapped[str | None] = mapped_column(Text)
     delivery_area_text: Mapped[str | None] = mapped_column(Text)
     pickup_available: Mapped[bool] = mapped_column(

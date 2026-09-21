@@ -194,6 +194,7 @@ def seed_database(session: Session, settings: Settings) -> None:
         name="Nosh Kitchen — Market Quarter",
         slug="market-quarter",
         address_text="12 Market Street, Market Quarter",
+        contact_phone="+1 (555) 010-0195",
         pickup_instructions="Collect from the Nosh Kitchen counter.",
         delivery_area_text="Simulated delivery within the Market Quarter demo area.",
         pickup_available=True,
@@ -202,6 +203,7 @@ def seed_database(session: Session, settings: Settings) -> None:
         demo_capacity=40,
         is_published=True,
     )
+    location.contact_phone = "+1 (555) 010-0195"
     find_or_create(
         session,
         Promotion,

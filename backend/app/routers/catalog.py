@@ -165,6 +165,7 @@ def list_locations(session: SessionDep) -> list[LocationResponse]:
             name=location.name,
             slug=location.slug,
             address_text=location.address_text,
+            contact_phone=location.contact_phone,
             pickup_instructions=location.pickup_instructions,
             delivery_area_text=location.delivery_area_text,
             pickup_available=location.pickup_available,

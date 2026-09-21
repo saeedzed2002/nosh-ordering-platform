@@ -4,6 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
+from app.models import OrderStatus
 from app.schemas.cart import CartLineRequest
 
 
@@ -112,6 +113,33 @@ class OrderStatusEventResponse(BaseModel):
     created_at: datetime
 
 
+class OrderIssueReason(StrEnum):
+    CUSTOMER_REQUEST = "customer_request"
+    FULFILLMENT_DETAILS = "fulfillment_details"
+    KITCHEN_UNAVAILABLE = "kitchen_unavailable"
+    SCHEDULE_UNAVAILABLE = "schedule_unavailable"
+
+
+class OrderStatusTransitionRequest(BaseModel):
+    status: OrderStatus
+    reason: OrderIssueReason | None = None
+
+    @model_validator(mode="after")
+    def validate_reason(self) -> "OrderStatusTransitionRequest":
+        needs_reason = {
+            OrderStatus.DECLINED,
+            OrderStatus.CANCELLED,
+            OrderStatus.NEEDS_CONTACT,
+        }
+        if self.status in needs_reason and self.reason is None:
+            raise ValueError("Choose a customer-safe reason for this order status.")
+        if self.status not in needs_reason and self.reason is not None:
+            raise ValueError(
+                "A reason is only used for a contact, decline, or cancellation state."
+            )
+        return self
+
+
 class OrderReceiptResponse(BaseModel):
     public_reference: str
     status: str
@@ -119,7 +147,12 @@ class OrderReceiptResponse(BaseModel):
     scheduled_for: datetime | None
     location_name: str
     location_address: str
+    contact_phone: str
     fulfillment_method: str
+    pickup_instructions: str | None
+    delivery_area: str | None
+    preparation_minutes: int
+    estimated_fulfillment_at: datetime | None
     currency_code: str
     subtotal_minor: int
     promotion_code: str | None

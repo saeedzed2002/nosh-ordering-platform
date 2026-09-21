@@ -46,7 +46,12 @@ export type CustomerOrderReceipt = {
   scheduled_for: string | null;
   location_name: string;
   location_address: string;
+  contact_phone: string;
   fulfillment_method: CustomerFulfillmentMethod;
+  pickup_instructions: string | null;
+  delivery_area: string | null;
+  preparation_minutes: number;
+  estimated_fulfillment_at: string | null;
   currency_code: string;
   subtotal_minor: number;
   promotion_code: string | null;

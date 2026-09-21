@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 from fastapi import HTTPException, status
@@ -50,6 +50,7 @@ def request_fingerprint(request: CheckoutRequest) -> str:
 
 def order_query():
     return select(Order).options(
+        joinedload(Order.location),
         selectinload(Order.items),
         selectinload(Order.status_events),
     )
@@ -230,8 +231,10 @@ def create_order(session: Session, request: CheckoutRequest) -> tuple[Order, boo
         fulfillment_snapshot={
             "location_name": location.name,
             "location_address": location.address_text,
+            "contact_phone": location.contact_phone,
             "pickup_instructions": location.pickup_instructions,
             "delivery_area": location.delivery_area_text,
+            "preparation_minutes": location.preparation_minutes,
             "delivery_address": request.delivery_address,
             "instructions": request.fulfillment_instructions,
             "timing": request.timing.value,
@@ -275,6 +278,7 @@ def create_order(session: Session, request: CheckoutRequest) -> tuple[Order, boo
         )
     order.status_events.append(
         OrderStatusEvent(
+            created_at=datetime.now(UTC),
             status=order_status,
             note=(
                 "Scheduled order confirmed with local mock payment."
@@ -307,6 +311,16 @@ def serialize_order(order: Order) -> OrderReceiptResponse:
     fulfillment = order.fulfillment_snapshot
     payment = order.payment_snapshot
     promotion = order.promotion_snapshot
+    preparation_minutes = int(
+        fulfillment.get("preparation_minutes", order.location.preparation_minutes)
+    )
+    estimated_base = order.scheduled_for or order.created_at
+    estimated_fulfillment_at = (
+        as_utc(estimated_base)
+        if order.scheduled_for is not None
+        else (as_utc(estimated_base) or datetime.now(UTC))
+        + timedelta(minutes=preparation_minutes)
+    )
     return OrderReceiptResponse(
         public_reference=order.public_reference,
         status=OrderStatus(order.status).value,
@@ -314,7 +328,14 @@ def serialize_order(order: Order) -> OrderReceiptResponse:
         scheduled_for=as_utc(order.scheduled_for),
         location_name=str(fulfillment["location_name"]),
         location_address=str(fulfillment["location_address"]),
+        contact_phone=str(
+            fulfillment.get("contact_phone", order.location.contact_phone)
+        ),
         fulfillment_method=FulfillmentMethod(order.fulfillment_method).value,
+        pickup_instructions=fulfillment.get("pickup_instructions"),
+        delivery_area=fulfillment.get("delivery_area"),
+        preparation_minutes=preparation_minutes,
+        estimated_fulfillment_at=estimated_fulfillment_at,
         currency_code=order.currency_code,
         subtotal_minor=order.subtotal_minor,
         promotion_code=promotion.get("code"),
