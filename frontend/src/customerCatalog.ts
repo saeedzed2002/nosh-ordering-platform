@@ -72,6 +72,8 @@ export type CustomerLocation = {
   pickup_available: boolean;
   delivery_available: boolean;
   preparation_minutes: number;
+  online_ordering_available: boolean;
+  online_ordering_message: string;
 };
 
 export type CustomerCatalogSnapshot = {

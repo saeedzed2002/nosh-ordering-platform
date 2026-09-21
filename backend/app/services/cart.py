@@ -24,6 +24,7 @@ from app.schemas.cart import (
     CartSelectedOptionResponse,
 )
 from app.schemas.catalog import MediaSummary
+from app.services.ordering import require_online_ordering
 
 
 def media_summary(media: MediaAsset | None) -> MediaSummary | None:
@@ -83,6 +84,9 @@ def quote_cart(
     session: Session, lines: list[CartLineRequest], location: Location | None
 ) -> CartQuoteResponse:
     """Recalculate a browser cart from published kitchen data only."""
+
+    if location is not None:
+        require_online_ordering(location)
 
     item_slugs = [line.menu_item_slug for line in lines]
     items = session.scalars(

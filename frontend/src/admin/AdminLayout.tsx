@@ -1,10 +1,11 @@
-import { Image, LayoutDashboard, LogOut, PanelsTopLeft, UtensilsCrossed } from "lucide-react";
+import { ClipboardList, Image, LayoutDashboard, LogOut, PanelsTopLeft, UtensilsCrossed } from "lucide-react";
 import { NavLink, Outlet } from "react-router-dom";
 
 import { Button } from "../components/ui/Button";
 import { useAdminSession } from "./session";
 
 const navigationItems = [
+  { label: "Orders", to: "/admin/orders", icon: ClipboardList },
   { label: "Home", to: "/admin/home", icon: PanelsTopLeft },
   { label: "Menu", to: "/admin/menu", icon: UtensilsCrossed },
   { label: "Media", to: "/admin/media", icon: Image },
@@ -16,6 +17,10 @@ function navigationClassName({ isActive }: { isActive: boolean }): string {
 
 export function AdminLayout() {
   const { session, signOut } = useAdminSession();
+  const isKitchen = session?.user.role === "kitchen";
+  const visibleNavigationItems = isKitchen
+    ? navigationItems.filter((item) => item.to === "/admin/orders")
+    : navigationItems;
 
   return (
     <div className="admin-shell">
@@ -28,8 +33,8 @@ export function AdminLayout() {
           <small>Kitchen desk</small>
         </NavLink>
         <nav aria-label="Administration navigation">
-          <p className="admin-nav-label">Publishing</p>
-          {navigationItems.map((item) => {
+          <p className="admin-nav-label">{isKitchen ? "Operations" : "Publishing"}</p>
+          {visibleNavigationItems.map((item) => {
             const Icon = item.icon;
             return (
               <NavLink key={item.to} className={navigationClassName} to={item.to}>

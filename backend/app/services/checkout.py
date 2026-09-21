@@ -11,9 +11,11 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload, selectinload
 
 from app.models import (
+    Allergen,
     FulfillmentMethod,
     Location,
     MenuItem,
+    MenuItemAllergen,
     Order,
     OrderItem,
     OrderStatus,
@@ -32,6 +34,7 @@ from app.schemas.orders import (
     PaymentScenario,
 )
 from app.services.cart import quote_cart
+from app.services.ordering import require_demo_capacity, require_online_ordering
 
 
 def as_utc(value: datetime | None) -> datetime | None:
@@ -66,10 +69,12 @@ def order_by_public_reference(session: Session, reference: str) -> Order | None:
 
 def resolve_checkout_location(session: Session, request: CheckoutRequest) -> Location:
     location = session.scalar(
-        select(Location).where(
+        select(Location)
+        .where(
             Location.slug == request.location_slug,
             Location.is_published.is_(True),
         )
+        .with_for_update()
     )
     if location is None:
         raise HTTPException(
@@ -160,6 +165,24 @@ def menu_items_for_snapshot(
     return {item.slug: item for item in items}
 
 
+def allergens_for_snapshot(
+    session: Session, menu_item_ids: list[object]
+) -> dict[object, list[dict[str, str]]]:
+    if not menu_item_ids:
+        return {}
+    rows = session.execute(
+        select(MenuItemAllergen.menu_item_id, Allergen)
+        .join(Allergen, Allergen.id == MenuItemAllergen.allergen_id)
+        .where(MenuItemAllergen.menu_item_id.in_(menu_item_ids))
+    ).all()
+    result: dict[object, list[dict[str, str]]] = {}
+    for menu_item_id, allergen in rows:
+        result.setdefault(menu_item_id, []).append(
+            {"name": allergen.name, "slug": allergen.slug}
+        )
+    return result
+
+
 def public_reference() -> str:
     return f"N-{uuid4().hex[:16].upper()}"
 
@@ -177,6 +200,8 @@ def create_order(session: Session, request: CheckoutRequest) -> tuple[Order, boo
 
     now = datetime.now(UTC)
     location = resolve_checkout_location(session, request)
+    require_online_ordering(location)
+    require_demo_capacity(session, location)
     scheduled_for = validate_scheduled_time(request, now)
     quote = quote_cart(session, request.lines, location)
     promotion, promotion_discount_minor = resolve_promotion(
@@ -199,6 +224,9 @@ def create_order(session: Session, request: CheckoutRequest) -> tuple[Order, boo
                 "A dish changed while this order was being checked. Please try again."
             ),
         )
+    allergens_by_menu_item_id = allergens_for_snapshot(
+        session, [item.id for item in items_by_slug.values()]
+    )
 
     order_status = (
         OrderStatus.SCHEDULED if scheduled_for is not None else OrderStatus.SUBMITTED
@@ -269,6 +297,7 @@ def create_order(session: Session, request: CheckoutRequest) -> tuple[Order, boo
                     "description": menu_item.description,
                     "ingredients": menu_item.ingredients,
                     "dietary_tags": menu_item.dietary_tags,
+                    "allergens": allergens_by_menu_item_id.get(menu_item.id, []),
                 },
                 selected_options_snapshot=[
                     option.model_dump(mode="json")

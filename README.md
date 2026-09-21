@@ -12,7 +12,8 @@ the Phase 3 dynamic customer landing page, the Phase 4 durable backend
 foundation, the Phase 5 local administration workflow, the Phase 6 menu
 administration workflow, the Phase 7 customer menu/discovery workflow, and the
 Phase 8 trustworthy-cart workflow, and the Phase 9 checkout-and-confirmation
-workflow, and the Phase 10 customer-tracker-and-order-lifecycle workflow:
+workflow, the Phase 10 customer-tracker-and-order-lifecycle workflow, and the
+Phase 11 staff-order-desk workflow:
 
 - independent React/Vite and FastAPI applications;
 - a PostgreSQL-backed readiness endpoint;
@@ -56,10 +57,15 @@ workflow, and the Phase 10 customer-tracker-and-order-lifecycle workflow:
   or delivery journey, timestamps, initial kitchen estimate, location,
   restaurant contact, and customer-safe handoff instructions. It explicitly
   does not claim live courier GPS or a map.
+- Phase 11 adds the protected `/admin/orders` operational desk: searchable
+  order queues, private staff-only order context, guarded next-status actions,
+  controlled issue reasons, and per-location online-ordering, preparation, and
+  active-order-capacity controls. A paused, off, or capacity-full kitchen is
+  enforced by the server during checkout; it is not merely a browser state.
 
 Customer menu discovery, dish customization, the local cart, checkout, and
-order tracking are implemented. The staff order desk, customer accounts, real
-payments, real delivery integration, and customer reviews are not yet
+order tracking and the staff order desk are implemented. Customer accounts,
+real payments, real delivery integration, and customer reviews are not yet
 implemented and must not be represented as working product flows.
 
 ## Local run
@@ -144,4 +150,5 @@ docs/phase-7-customer-menu.md for the live menu/discovery contract. See
 docs/phase-8-trustworthy-cart.md for the cart and server-quote contract, and
 docs/phase-9-checkout-and-confirmation.md for order transaction and receipt
 boundaries. See docs/phase-10-customer-tracker-and-lifecycle.md for the
-tracking and lifecycle boundaries.
+tracking and lifecycle boundaries, and docs/phase-11-admin-order-desk.md for
+the protected operational order-desk contract.

@@ -20,6 +20,7 @@ from app.models import (
     MenuItem,
     MenuItemAllergen,
     MenuItemAvailability,
+    OnlineOrderingState,
     OperatingHour,
     Option,
     OptionGroup,
@@ -201,9 +202,10 @@ def seed_database(session: Session, settings: Settings) -> None:
         delivery_available=True,
         preparation_minutes=25,
         demo_capacity=40,
+        online_ordering_state=OnlineOrderingState.ON,
+        online_ordering_paused_until=None,
         is_published=True,
     )
-    location.contact_phone = "+1 (555) 010-0195"
     find_or_create(
         session,
         Promotion,

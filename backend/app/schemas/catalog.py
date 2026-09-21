@@ -42,6 +42,8 @@ class LocationResponse(BaseModel):
     pickup_available: bool
     delivery_available: bool
     preparation_minutes: int
+    online_ordering_available: bool
+    online_ordering_message: str
     hours: list[OperatingHourResponse]
 
 

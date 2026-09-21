@@ -142,12 +142,13 @@ export function CustomerCheckoutPage() {
   const currentMethodIsAvailable = form.fulfillmentMethod === "pickup"
     ? selectedLocation?.pickup_available
     : selectedLocation?.delivery_available;
+  const onlineOrderingIsAvailable = selectedLocation?.online_ordering_available ?? false;
   const canSubmit = Boolean(
-    quote && lines.length && selectedLocation && currentMethodIsAvailable && !isUpdating && !isSubmitting,
+    quote && lines.length && selectedLocation && currentMethodIsAvailable && onlineOrderingIsAvailable && !isUpdating && !isSubmitting,
   );
 
   const placeOrder = async () => {
-    if (!quote || !lines.length || !selectedLocation || !currentMethodIsAvailable) {
+    if (!quote || !lines.length || !selectedLocation || !currentMethodIsAvailable || !onlineOrderingIsAvailable) {
       setSubmitError("Your cart or fulfilment details need attention before this order can be placed.");
       return;
     }
@@ -212,6 +213,7 @@ export function CustomerCheckoutPage() {
               </label>
               {status === "loading" ? <small>Loading locations…</small> : null}
               {selectedLocation ? <p className="customer-checkout-location-note"><MapPin aria-hidden="true" /> {selectedLocation.address_text} · About {selectedLocation.preparation_minutes} min</p> : null}
+              {selectedLocation && !onlineOrderingIsAvailable ? <p className="customer-checkout-error">{selectedLocation.online_ordering_message}</p> : null}
             </fieldset>
 
             <fieldset disabled={isSubmitting || !selectedLocation}>

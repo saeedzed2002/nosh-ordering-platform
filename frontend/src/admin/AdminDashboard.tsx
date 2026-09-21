@@ -1,10 +1,14 @@
-import { ArrowUpRight, CheckCircle2, Image, PanelsTopLeft, UtensilsCrossed } from "lucide-react";
-import { Link } from "react-router-dom";
+import { ArrowUpRight, CheckCircle2, ClipboardList, Image, PanelsTopLeft, UtensilsCrossed } from "lucide-react";
+import { Link, Navigate } from "react-router-dom";
 
 import { useAdminSession } from "./session";
 
 export function AdminDashboard() {
   const { session } = useAdminSession();
+
+  if (session?.user.role === "kitchen") {
+    return <Navigate replace to="/admin/orders" />;
+  }
 
   return (
     <div className="admin-dashboard">
@@ -23,6 +27,15 @@ export function AdminDashboard() {
         </div>
       </header>
       <section className="admin-action-grid" aria-label="Publishing actions">
+        <Link className="admin-action-card" to="/admin/orders">
+          <ClipboardList aria-hidden="true" />
+          <div>
+            <span>Order desk</span>
+            <strong>Keep every handoff clear</strong>
+            <p>Review the next safe step, customer details, allergens, timing, and the kitchen queue.</p>
+          </div>
+          <ArrowUpRight aria-hidden="true" />
+        </Link>
         <Link className="admin-action-card" to="/admin/menu">
           <UtensilsCrossed aria-hidden="true" />
           <div>

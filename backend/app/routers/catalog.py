@@ -33,6 +33,7 @@ from app.schemas.catalog import (
     OptionResponse,
 )
 from app.services.cart import availability_by_menu_item_id, quote_cart
+from app.services.ordering import ordering_availability
 
 router = APIRouter(prefix="/api/v1/catalog", tags=["Catalog"])
 
@@ -171,6 +172,8 @@ def list_locations(session: SessionDep) -> list[LocationResponse]:
             pickup_available=location.pickup_available,
             delivery_available=location.delivery_available,
             preparation_minutes=location.preparation_minutes,
+            online_ordering_available=ordering_availability(location).is_available,
+            online_ordering_message=ordering_availability(location).message,
             hours=[
                 OperatingHourResponse(
                     weekday=hour.weekday,

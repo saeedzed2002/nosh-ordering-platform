@@ -6450,3 +6450,751 @@ select:focus-visible {
     animation: none;
   }
 }
+
+.admin-order-desk {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.admin-order-heading {
+  align-items: end;
+}
+
+.admin-order-heading-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  max-width: 15rem;
+  color: var(--text-muted);
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.admin-order-heading-meta svg {
+  width: 1.45rem;
+  height: 1.45rem;
+  color: var(--action-primary-hover);
+}
+
+.admin-order-queue-tabs {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-raised);
+}
+
+.admin-order-queue-tabs button {
+  display: flex;
+  min-height: 4.8rem;
+  flex-direction: column;
+  align-items: start;
+  justify-content: space-between;
+  gap: 0.3rem;
+  padding: 0.75rem;
+  border: 0;
+  border-right: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+.admin-order-queue-tabs button:last-child {
+  border-right: 0;
+}
+
+.admin-order-queue-tabs button:hover,
+.admin-order-queue-tabs button.active {
+  color: var(--surface-inverse);
+  background: var(--surface-muted);
+}
+
+.admin-order-queue-tabs button.active {
+  box-shadow: inset 0 -3px 0 var(--action-primary-hover);
+}
+
+.admin-order-queue-tabs span {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 750;
+  line-height: 1.15;
+}
+
+.admin-order-queue-tabs svg {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
+.admin-order-queue-tabs strong {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 600;
+}
+
+.admin-order-filter-bar {
+  display: grid;
+  grid-template-columns: minmax(13rem, 1.4fr) repeat(5, minmax(7.5rem, 1fr));
+  gap: 0.75rem;
+  padding: 0.9rem;
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-raised);
+}
+
+.admin-order-filter-bar label {
+  display: grid;
+  gap: 0.3rem;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+}
+
+.admin-order-filter-bar input,
+.admin-order-filter-bar select,
+.admin-order-controls-form input,
+.admin-order-controls-form select,
+.admin-order-modal select {
+  width: 100%;
+  min-height: 2.6rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 0;
+  color: var(--surface-inverse);
+  background: var(--surface-canvas);
+  font: inherit;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.admin-order-search {
+  position: relative;
+}
+
+.admin-order-search svg {
+  position: absolute;
+  top: 1.86rem;
+  left: 0.75rem;
+  width: 1rem;
+  height: 1rem;
+  color: var(--action-primary-hover);
+}
+
+.admin-order-search input {
+  padding-left: 2.45rem;
+}
+
+.admin-order-desk-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(22rem, 0.62fr);
+  align-items: start;
+  gap: 1.25rem;
+}
+
+.admin-order-list-panel,
+.admin-order-detail-panel,
+.admin-order-controls {
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-raised);
+}
+
+.admin-order-list-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.1rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.admin-order-list-heading > div {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--surface-inverse);
+  font-weight: 800;
+}
+
+.admin-order-list-heading svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  color: var(--action-primary-hover);
+}
+
+.admin-order-list-heading small {
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.admin-order-list {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.admin-order-list li + li {
+  border-top: 1px solid var(--border-subtle);
+}
+
+.admin-order-list button {
+  display: grid;
+  width: 100%;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  padding: 1rem 1.1rem;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+.admin-order-list button:hover,
+.admin-order-list button.selected {
+  background: color-mix(in srgb, var(--action-primary) 11%, var(--surface-raised));
+}
+
+.admin-order-list button > div {
+  display: grid;
+  align-content: start;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.admin-order-list button > div:last-child {
+  justify-items: end;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.admin-order-list strong {
+  overflow: hidden;
+  color: var(--surface-inverse);
+  font-family: var(--font-display);
+  font-size: 1.22rem;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-order-list small {
+  overflow: hidden;
+  color: var(--text-muted);
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-order-list button > div:last-child > span {
+  color: var(--surface-inverse);
+  font-weight: 800;
+}
+
+.admin-order-list button > div:last-child svg {
+  width: 1rem;
+  height: 1rem;
+  margin-top: 0.15rem;
+  color: var(--action-primary-hover);
+}
+
+.admin-order-status {
+  width: fit-content;
+  padding: 0.25rem 0.48rem;
+  border-radius: 999px;
+  color: var(--surface-inverse);
+  background: var(--surface-muted);
+  font-size: 0.68rem;
+  font-weight: 850;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+}
+
+.admin-order-status.ready {
+  color: #684200;
+  background: #f4db9a;
+}
+
+.admin-order-status.issue {
+  color: #7b1c0d;
+  background: #f5c0b4;
+}
+
+.admin-order-status.complete {
+  color: #0a4f31;
+  background: #bfe0c9;
+}
+
+.admin-order-detail-panel {
+  position: sticky;
+  top: 1rem;
+  max-height: calc(100vh - 2rem);
+  overflow: auto;
+}
+
+.admin-order-detail-empty,
+.admin-order-loading,
+.admin-order-empty {
+  display: grid;
+  justify-items: start;
+  gap: 0.65rem;
+  min-height: 13rem;
+  padding: 1.5rem;
+}
+
+.admin-order-detail-empty svg,
+.admin-order-loading svg,
+.admin-order-empty > svg {
+  width: 1.75rem;
+  height: 1.75rem;
+  color: var(--action-primary-hover);
+}
+
+.admin-order-detail-empty h2,
+.admin-order-empty h2 {
+  margin: 0;
+  color: var(--surface-inverse);
+  font-family: var(--font-display);
+  font-size: 1.9rem;
+  font-weight: 600;
+  letter-spacing: -0.045em;
+}
+
+.admin-order-detail-empty p,
+.admin-order-empty p {
+  max-width: 24rem;
+  margin: 0;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.admin-order-detail-header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1.25rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.admin-order-detail-header > div {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.admin-order-detail-header h2 {
+  margin: 0;
+  color: var(--surface-inverse);
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  font-weight: 600;
+  letter-spacing: -0.045em;
+}
+
+.admin-order-detail-header p {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
+.admin-order-detail-header p svg {
+  width: 0.95rem;
+  height: 0.95rem;
+  color: var(--action-primary-hover);
+}
+
+.admin-order-actions {
+  display: grid;
+  gap: 0.7rem;
+  padding: 1.1rem 1.25rem;
+  border-bottom: 1px solid var(--border-subtle);
+  background: color-mix(in srgb, var(--surface-muted) 66%, var(--surface-raised));
+}
+
+.admin-order-actions > p {
+  margin: 0;
+  color: var(--action-primary-hover);
+  font-size: 0.7rem;
+  font-weight: 850;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.admin-order-actions > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.admin-order-actions .nosh-button {
+  min-height: 2.2rem;
+  padding: 0.45rem 0.7rem;
+  font-size: 0.76rem;
+}
+
+.admin-order-detail-section {
+  padding: 1.25rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.admin-order-detail-section h3 {
+  margin: 0 0 0.9rem;
+  color: var(--surface-inverse);
+  font-size: 0.95rem;
+}
+
+.admin-order-detail-section dl {
+  display: grid;
+  gap: 0;
+  margin: 0;
+}
+
+.admin-order-detail-section dl > div {
+  display: grid;
+  grid-template-columns: minmax(7.5rem, 0.55fr) minmax(0, 1fr);
+  gap: 0.65rem;
+  padding: 0.55rem 0;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.admin-order-detail-section dt {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+
+.admin-order-detail-section dd {
+  min-width: 0;
+  margin: 0;
+  color: var(--surface-inverse);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.admin-order-detail-section a {
+  color: inherit;
+  text-decoration-color: var(--action-primary-hover);
+  text-underline-offset: 0.18em;
+}
+
+.admin-order-lines,
+.admin-order-timeline ol {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.admin-order-lines li {
+  display: grid;
+  gap: 0.8rem;
+  padding: 0.85rem 0;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.admin-order-lines li > div {
+  display: grid;
+  gap: 0.22rem;
+}
+
+.admin-order-lines strong {
+  color: var(--surface-inverse);
+}
+
+.admin-order-lines span,
+.admin-order-lines p,
+.admin-order-lines small {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.admin-order-allergens {
+  color: #8f310f !important;
+  font-weight: 800;
+}
+
+.admin-order-timeline li {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1.35rem minmax(0, 1fr);
+  gap: 0.65rem;
+  padding: 0 0 1rem;
+}
+
+.admin-order-timeline li:not(:last-child)::before {
+  position: absolute;
+  top: 1.35rem;
+  bottom: 0;
+  left: 0.45rem;
+  width: 1px;
+  background: var(--border-subtle);
+  content: "";
+}
+
+.admin-order-timeline li > span {
+  z-index: 1;
+  display: grid;
+  width: 0.95rem;
+  height: 0.95rem;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--surface-raised);
+  background: var(--surface-inverse);
+}
+
+.admin-order-timeline li svg {
+  width: 0.65rem;
+  height: 0.65rem;
+}
+
+.admin-order-timeline li > div {
+  display: grid;
+  gap: 0.18rem;
+}
+
+.admin-order-timeline strong {
+  color: var(--surface-inverse);
+}
+
+.admin-order-timeline time,
+.admin-order-timeline p,
+.admin-order-timeline small {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.admin-order-timeline p {
+  margin: 0;
+}
+
+.admin-order-controls {
+  padding: 1.5rem;
+}
+
+.admin-order-controls header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-bottom: 1.2rem;
+}
+
+.admin-order-controls h2 {
+  max-width: 35rem;
+  margin: 0.55rem 0;
+  color: var(--surface-inverse);
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 3vw, 2.8rem);
+  font-weight: 600;
+  letter-spacing: -0.05em;
+  line-height: 0.95;
+}
+
+.admin-order-controls header p:not(.admin-kicker),
+.admin-order-controls-save p {
+  max-width: 39rem;
+  margin: 0;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.admin-order-controls > header > span {
+  flex: 0 0 auto;
+  padding: 0.45rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 850;
+}
+
+.admin-order-controls > header > span.available {
+  color: #0a4f31;
+  background: #bfe0c9;
+}
+
+.admin-order-controls > header > span.paused {
+  color: #7b1c0d;
+  background: #f5c0b4;
+}
+
+.admin-order-controls-form {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.8rem;
+  align-items: end;
+}
+
+.admin-order-controls-form label,
+.admin-order-modal label {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.admin-order-controls-save {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.admin-order-controls-save p {
+  font-size: 0.8rem;
+}
+
+.admin-order-controls-save .nosh-button {
+  justify-self: start;
+}
+
+.admin-order-modal-backdrop {
+  position: fixed;
+  z-index: 30;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgb(5 25 16 / 58%);
+}
+
+.admin-order-modal {
+  position: relative;
+  display: grid;
+  width: min(100%, 29rem);
+  gap: 1rem;
+  padding: 1.65rem;
+  border: 1px solid var(--border-strong);
+  background: var(--surface-raised);
+  box-shadow: 0 1.2rem 4rem rgb(0 0 0 / 22%);
+}
+
+.admin-order-modal h2 {
+  margin: 0;
+  color: var(--surface-inverse);
+  font-family: var(--font-display);
+  font-size: 2.2rem;
+  font-weight: 600;
+  letter-spacing: -0.05em;
+}
+
+.admin-order-modal p:not(.admin-kicker) {
+  margin: 0;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.admin-order-modal > div:last-child {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: end;
+  gap: 0.6rem;
+}
+
+.admin-order-modal-close {
+  position: absolute;
+  top: 0.7rem;
+  right: 0.7rem;
+  display: grid;
+  width: 2.2rem;
+  height: 2.2rem;
+  place-items: center;
+  border: 0;
+  color: var(--surface-inverse);
+  background: transparent;
+  cursor: pointer;
+}
+
+.admin-order-modal-close svg {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+@media (max-width: 1180px) {
+  .admin-order-filter-bar {
+    grid-template-columns: minmax(15rem, 1.5fr) repeat(3, minmax(8rem, 1fr));
+  }
+
+  .admin-order-controls-form {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 920px) {
+  .admin-order-queue-tabs {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .admin-order-queue-tabs button:nth-child(4) {
+    border-right: 0;
+  }
+
+  .admin-order-queue-tabs button:nth-child(n + 5) {
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .admin-order-desk-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-order-detail-panel {
+    position: static;
+    max-height: none;
+  }
+}
+
+@media (max-width: 680px) {
+  .admin-order-heading,
+  .admin-order-controls header {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .admin-order-queue-tabs,
+  .admin-order-filter-bar,
+  .admin-order-controls-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-order-queue-tabs button:nth-child(2n) {
+    border-right: 0;
+  }
+
+  .admin-order-queue-tabs button:nth-child(n + 3) {
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .admin-order-search {
+    grid-column: 1 / -1;
+  }
+
+  .admin-order-list button {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-order-list button > div:last-child {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    justify-items: start;
+  }
+
+  .admin-order-list button > div:last-child svg {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+    align-self: center;
+  }
+
+  .admin-order-detail-section dl > div {
+    grid-template-columns: 1fr;
+    gap: 0.18rem;
+  }
+}

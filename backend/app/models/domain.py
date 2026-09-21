@@ -11,6 +11,7 @@ from sqlalchemy import (
     CheckConstraint,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     String,
     Text,
@@ -69,6 +70,12 @@ class PromotionKind(StrEnum):
 class FulfillmentMethod(StrEnum):
     PICKUP = "pickup"
     DELIVERY = "delivery"
+
+
+class OnlineOrderingState(StrEnum):
+    ON = "on"
+    TIMED_PAUSE = "timed_pause"
+    OFF = "off"
 
 
 class OrderStatus(StrEnum):
@@ -134,6 +141,17 @@ class Location(TimestampedUUIDMixin, Base):
         CheckConstraint("slug = lower(slug)", name="location_slug_lower"),
         CheckConstraint("preparation_minutes >= 0", name="preparation_non_negative"),
         CheckConstraint("demo_capacity >= 0", name="capacity_non_negative"),
+        CheckConstraint(
+            "online_ordering_state IN ('on', 'timed_pause', 'off')",
+            name="online_ordering_state_allowed",
+        ),
+        CheckConstraint(
+            "(online_ordering_state = 'timed_pause' "
+            "AND online_ordering_paused_until IS NOT NULL) "
+            "OR (online_ordering_state != 'timed_pause' "
+            "AND online_ordering_paused_until IS NULL)",
+            name="online_ordering_pause_window",
+        ),
     )
 
     name: Mapped[str] = mapped_column(String(160), nullable=False)
@@ -154,6 +172,12 @@ class Location(TimestampedUUIDMixin, Base):
         Integer, nullable=False, default=25
     )
     demo_capacity: Mapped[int] = mapped_column(Integer, nullable=False, default=40)
+    online_ordering_state: Mapped[OnlineOrderingState] = mapped_column(
+        String(16), nullable=False, server_default=OnlineOrderingState.ON.value
+    )
+    online_ordering_paused_until: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True)
+    )
     is_published: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     hours: Mapped[list[OperatingHour]] = relationship(
         back_populates="location", cascade="all, delete-orphan"
@@ -574,6 +598,8 @@ class Order(TimestampedUUIDMixin, Base):
             "length(currency_code) = 3 AND currency_code = upper(currency_code)",
             name="currency_code_uppercase",
         ),
+        Index("ix_orders_status_created_at", "status", "created_at"),
+        Index("ix_orders_location_created_at", "location_id", "created_at"),
     )
 
     public_reference: Mapped[str] = mapped_column(
