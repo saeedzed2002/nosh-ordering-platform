@@ -23,6 +23,8 @@ from app.models import (
     OperatingHour,
     Option,
     OptionGroup,
+    Promotion,
+    PromotionKind,
     PublicationState,
     Role,
     RoleCode,
@@ -107,6 +109,13 @@ def ensure_project_seed_media(
 
     payload = source_path.read_bytes()
     validated_image = validate_image_payload(payload, "image/png")
+    legacy_media = session.scalar(
+        select(MediaAsset).where(
+            MediaAsset.checksum_sha256 == validated_image.checksum_sha256
+        )
+    )
+    if legacy_media is not None:
+        return legacy_media
     stored_image = persist_image(
         media_root,
         filename,
@@ -192,6 +201,21 @@ def seed_database(session: Session, settings: Settings) -> None:
         preparation_minutes=25,
         demo_capacity=40,
         is_published=True,
+    )
+    find_or_create(
+        session,
+        Promotion,
+        Promotion.code,
+        "WELCOME10",
+        id=seeded_id("promotion:welcome10"),
+        code="WELCOME10",
+        name="Welcome 10",
+        kind=PromotionKind.PERCENTAGE,
+        discount_value=1000,
+        minimum_order_minor=2000,
+        usage_limit=None,
+        usage_count=0,
+        is_active=True,
     )
     for weekday in range(7):
         find_or_create(

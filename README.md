@@ -11,7 +11,8 @@ experience/information-architecture contract, the Phase 2 component foundation,
 the Phase 3 dynamic customer landing page, the Phase 4 durable backend
 foundation, the Phase 5 local administration workflow, the Phase 6 menu
 administration workflow, the Phase 7 customer menu/discovery workflow, and the
-Phase 8 trustworthy-cart workflow:
+Phase 8 trustworthy-cart workflow, and the Phase 9 checkout-and-confirmation
+workflow:
 
 - independent React/Vite and FastAPI applications;
 - a PostgreSQL-backed readiness endpoint;
@@ -43,10 +44,18 @@ Phase 8 trustworthy-cart workflow:
   options, selection limits, quantities, notes, current-price preview, cart
   edits, complementary suggestions, and the final quoted subtotal are checked
   against the published server catalog before a line is retained.
+- Phase 9 `/checkout` and `/orders/{publicReference}` routes. The customer
+  selects a published location, pickup or simulated delivery, immediate or
+  scheduled timing, recipient details, instructions, and a server-validated
+  demo promotion. An atomic order stores immutable line, price, option,
+  fulfilment, payment, and status snapshots; an idempotency key prevents a
+  duplicate order. The confirmation receipt is refresh-safe and deliberately
+  omits private contact, address, and instruction data from its public route.
 
-Customer menu discovery, dish customization, and the local cart are
-implemented. Checkout, order creation, tracking, and customer accounts are not
-yet implemented and must not be represented as working product flows.
+Customer menu discovery, dish customization, the local cart, checkout, and
+order confirmation are implemented. Tracking, customer accounts, real payments,
+real delivery integration, and customer reviews are not yet implemented and
+must not be represented as working product flows.
 
 ## Local run
 
@@ -112,7 +121,9 @@ uv run pytest -q
 
 - The initial customer language is English LTR.
 - The initial demo has one fictional location.
-- Payment and fulfillment are simulated in later phases.
+- Payment and fulfillment are simulated; no card data is accepted or stored.
+- A public order reference is not an authorization credential. The public
+  receipt excludes private recipient, address, and instruction snapshots.
 - The `origin` remote is connected to the private GitHub repository. Local
   validation remains distinct from GitHub Actions and production evidence.
 
@@ -124,4 +135,6 @@ docs/phase-3-customer-landing.md for the dynamic landing-page contract. See
 docs/phase-5-admin-home-and-media.md for the home/media workflow and
 docs/phase-6-menu-administration.md for the menu administration contract and
 docs/phase-7-customer-menu.md for the live menu/discovery contract. See
-docs/phase-8-trustworthy-cart.md for the cart and server-quote contract.
+docs/phase-8-trustworthy-cart.md for the cart and server-quote contract, and
+docs/phase-9-checkout-and-confirmation.md for order transaction and receipt
+boundaries.

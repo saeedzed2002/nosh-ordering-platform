@@ -61,6 +61,32 @@ class CatalogChangeAction(StrEnum):
     VISIBILITY_CHANGED = "visibility_changed"
 
 
+class PromotionKind(StrEnum):
+    FIXED_AMOUNT = "fixed_amount"
+    PERCENTAGE = "percentage"
+
+
+class FulfillmentMethod(StrEnum):
+    PICKUP = "pickup"
+    DELIVERY = "delivery"
+
+
+class OrderStatus(StrEnum):
+    SCHEDULED = "scheduled"
+    SUBMITTED = "submitted"
+    ACCEPTED = "accepted"
+    PREPARING = "preparing"
+    READY_FOR_PICKUP = "ready_for_pickup"
+    READY_FOR_COURIER = "ready_for_courier"
+    HANDED_TO_CUSTOMER = "handed_to_customer"
+    HANDED_TO_COURIER = "handed_to_courier"
+    OUT_FOR_DELIVERY = "out_for_delivery"
+    DELIVERED = "delivered"
+    DECLINED = "declined"
+    CANCELLED = "cancelled"
+    NEEDS_CONTACT = "needs_contact"
+
+
 class TimestampedUUIDMixin:
     id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
     created_at: Mapped[datetime] = mapped_column(
@@ -477,6 +503,175 @@ class CatalogChange(TimestampedUUIDMixin, Base):
     action: Mapped[CatalogChangeAction] = mapped_column(String(48), nullable=False)
     snapshot: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
     actor: Mapped[User] = relationship()
+
+
+class Promotion(TimestampedUUIDMixin, Base):
+    __tablename__ = "promotions"
+    __table_args__ = (
+        CheckConstraint("code = upper(code)", name="code_upper"),
+        CheckConstraint("kind IN ('fixed_amount', 'percentage')", name="kind_allowed"),
+        CheckConstraint("discount_value > 0", name="discount_value_positive"),
+        CheckConstraint("minimum_order_minor >= 0", name="minimum_order_non_negative"),
+        CheckConstraint("usage_count >= 0", name="usage_count_non_negative"),
+        CheckConstraint(
+            "usage_limit IS NULL OR usage_limit > 0", name="usage_limit_positive"
+        ),
+        CheckConstraint(
+            "ends_at IS NULL OR starts_at IS NULL OR ends_at > starts_at",
+            name="valid_window",
+        ),
+        CheckConstraint(
+            "(kind = 'fixed_amount' AND discount_value >= 1) "
+            "OR (kind = 'percentage' AND discount_value BETWEEN 1 AND 10000)",
+            name="discount_value_valid_for_kind",
+        ),
+    )
+
+    code: Mapped[str] = mapped_column(String(48), unique=True, nullable=False)
+    name: Mapped[str] = mapped_column(String(160), nullable=False)
+    kind: Mapped[PromotionKind] = mapped_column(String(24), nullable=False)
+    discount_value: Mapped[int] = mapped_column(Integer, nullable=False)
+    minimum_order_minor: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    starts_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    ends_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    usage_limit: Mapped[int | None] = mapped_column(Integer)
+    usage_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+
+class Order(TimestampedUUIDMixin, Base):
+    __tablename__ = "orders"
+    __table_args__ = (
+        CheckConstraint(
+            "public_reference = upper(public_reference)", name="reference_upper"
+        ),
+        CheckConstraint(
+            "fulfillment_method IN ('pickup', 'delivery')", name="fulfillment_allowed"
+        ),
+        CheckConstraint(
+            "status IN ('scheduled', 'submitted', 'accepted', 'preparing', "
+            "'ready_for_pickup', 'ready_for_courier', 'handed_to_customer', "
+            "'handed_to_courier', 'out_for_delivery', 'delivered', 'declined', "
+            "'cancelled', 'needs_contact')",
+            name="status_allowed",
+        ),
+        CheckConstraint("subtotal_minor >= 0", name="subtotal_non_negative"),
+        CheckConstraint(
+            "promotion_discount_minor >= 0", name="promotion_discount_non_negative"
+        ),
+        CheckConstraint(
+            "promotion_discount_minor <= subtotal_minor",
+            name="promotion_discount_lte_subtotal",
+        ),
+        CheckConstraint(
+            "total_minor = subtotal_minor - promotion_discount_minor",
+            name="total_matches_components",
+        ),
+        CheckConstraint(
+            "length(currency_code) = 3 AND currency_code = upper(currency_code)",
+            name="currency_code_uppercase",
+        ),
+    )
+
+    public_reference: Mapped[str] = mapped_column(
+        String(32), unique=True, nullable=False
+    )
+    idempotency_key: Mapped[str] = mapped_column(
+        String(64), unique=True, nullable=False
+    )
+    request_fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
+    location_id: Mapped[UUID] = mapped_column(
+        ForeignKey("locations.id"), nullable=False, index=True
+    )
+    promotion_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("promotions.id", ondelete="SET NULL"), index=True
+    )
+    status: Mapped[OrderStatus] = mapped_column(String(32), nullable=False)
+    fulfillment_method: Mapped[FulfillmentMethod] = mapped_column(
+        String(16), nullable=False
+    )
+    scheduled_for: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    recipient_snapshot: Mapped[dict[str, Any]] = mapped_column(
+        JSON, nullable=False, default=dict
+    )
+    fulfillment_snapshot: Mapped[dict[str, Any]] = mapped_column(
+        JSON, nullable=False, default=dict
+    )
+    promotion_snapshot: Mapped[dict[str, Any]] = mapped_column(
+        JSON, nullable=False, default=dict
+    )
+    payment_snapshot: Mapped[dict[str, Any]] = mapped_column(
+        JSON, nullable=False, default=dict
+    )
+    currency_code: Mapped[str] = mapped_column(String(3), nullable=False)
+    subtotal_minor: Mapped[int] = mapped_column(Integer, nullable=False)
+    promotion_discount_minor: Mapped[int] = mapped_column(Integer, nullable=False)
+    total_minor: Mapped[int] = mapped_column(Integer, nullable=False)
+    location: Mapped[Location] = relationship()
+    promotion: Mapped[Promotion | None] = relationship()
+    items: Mapped[list[OrderItem]] = relationship(
+        back_populates="order", cascade="all, delete-orphan"
+    )
+    status_events: Mapped[list[OrderStatusEvent]] = relationship(
+        back_populates="order", cascade="all, delete-orphan"
+    )
+
+
+class OrderItem(TimestampedUUIDMixin, Base):
+    __tablename__ = "order_items"
+    __table_args__ = (
+        CheckConstraint("quantity > 0", name="quantity_positive"),
+        CheckConstraint("unit_price_minor >= 0", name="unit_price_non_negative"),
+        CheckConstraint("line_total_minor >= 0", name="line_total_non_negative"),
+        CheckConstraint(
+            "line_total_minor = unit_price_minor * quantity", name="line_total_matches"
+        ),
+        CheckConstraint(
+            "length(currency_code) = 3 AND currency_code = upper(currency_code)",
+            name="currency_code_uppercase",
+        ),
+    )
+
+    order_id: Mapped[UUID] = mapped_column(
+        ForeignKey("orders.id"), nullable=False, index=True
+    )
+    menu_item_id: Mapped[UUID] = mapped_column(Uuid, nullable=False, index=True)
+    menu_item_slug: Mapped[str] = mapped_column(String(160), nullable=False)
+    menu_item_name: Mapped[str] = mapped_column(String(160), nullable=False)
+    quantity: Mapped[int] = mapped_column(Integer, nullable=False)
+    note: Mapped[str | None] = mapped_column(String(500))
+    unit_price_minor: Mapped[int] = mapped_column(Integer, nullable=False)
+    line_total_minor: Mapped[int] = mapped_column(Integer, nullable=False)
+    currency_code: Mapped[str] = mapped_column(String(3), nullable=False)
+    item_snapshot: Mapped[dict[str, Any]] = mapped_column(
+        JSON, nullable=False, default=dict
+    )
+    selected_options_snapshot: Mapped[list[dict[str, Any]]] = mapped_column(
+        JSON, nullable=False, default=list
+    )
+    order: Mapped[Order] = relationship(back_populates="items")
+
+
+class OrderStatusEvent(TimestampedUUIDMixin, Base):
+    __tablename__ = "order_status_events"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('scheduled', 'submitted', 'accepted', 'preparing', "
+            "'ready_for_pickup', 'ready_for_courier', 'handed_to_customer', "
+            "'handed_to_courier', 'out_for_delivery', 'delivered', 'declined', "
+            "'cancelled', 'needs_contact')",
+            name="status_allowed",
+        ),
+    )
+
+    order_id: Mapped[UUID] = mapped_column(
+        ForeignKey("orders.id"), nullable=False, index=True
+    )
+    actor_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"), index=True)
+    status: Mapped[OrderStatus] = mapped_column(String(32), nullable=False)
+    note: Mapped[str] = mapped_column(String(500), nullable=False)
+    order: Mapped[Order] = relationship(back_populates="status_events")
+    actor: Mapped[User | None] = relationship()
 
 
 def model_metadata() -> Any:

@@ -10,6 +10,7 @@ import { MediaLibraryPage } from "./admin/MediaLibraryPage";
 import { AdminSessionProvider, useAdminSession } from "./admin/session";
 import App from "./App";
 import { CustomerCartProvider } from "./customerCart";
+import { CustomerCheckoutPage, CustomerOrderConfirmationPage } from "./CustomerCheckoutPage";
 import { CustomerMenuItemPage, CustomerMenuPage } from "./CustomerMenuPage";
 import { AboutPage, LocationsPage, NotFoundPage } from "./SitePages";
 
@@ -33,6 +34,8 @@ export function AppRouter() {
           <Route path="/" element={<App />} />
           <Route path="/menu" element={<CustomerMenuPage />} />
           <Route path="/menu/:slug" element={<CustomerMenuItemPage />} />
+          <Route path="/checkout" element={<CustomerCheckoutPage />} />
+          <Route path="/orders/:publicReference" element={<CustomerOrderConfirmationPage />} />
           <Route path="/locations" element={<LocationsPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/admin/sign-in" element={<AdminSignInPage />} />

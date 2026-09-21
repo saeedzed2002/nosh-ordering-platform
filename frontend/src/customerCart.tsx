@@ -22,6 +22,7 @@ const storageVersion = 1;
 type CustomerCartContextValue = {
   addLine: (line: CustomerCartLineInput) => Promise<void>;
   cartCount: number;
+  clearCart: () => void;
   error: string | null;
   isOpen: boolean;
   isUpdating: boolean;
@@ -128,7 +129,6 @@ export function CustomerCartProvider({ children }: { children: ReactNode }) {
     if (restoredQuoteAttempted.current || !lines.length) {
       return;
     }
-    restoredQuoteAttempted.current = true;
     const controller = new AbortController();
     setIsUpdating(true);
     void quoteCustomerCart(lines, controller.signal)
@@ -145,6 +145,7 @@ export function CustomerCartProvider({ children }: { children: ReactNode }) {
       })
       .finally(() => {
         if (!controller.signal.aborted) {
+          restoredQuoteAttempted.current = true;
           setIsUpdating(false);
         }
       });
@@ -174,9 +175,17 @@ export function CustomerCartProvider({ children }: { children: ReactNode }) {
     });
   }, [lines, quoteAndCommit]);
 
+  const clearCart = useCallback(() => {
+    setLines([]);
+    setQuote(null);
+    setError(null);
+    setOpen(false);
+  }, []);
+
   const value = useMemo<CustomerCartContextValue>(() => ({
     addLine,
     cartCount: lines.reduce((total, line) => total + line.quantity, 0),
+    clearCart,
     error,
     isOpen,
     isUpdating,
@@ -186,7 +195,7 @@ export function CustomerCartProvider({ children }: { children: ReactNode }) {
     removeLine,
     setOpen,
     updateQuantity,
-  }), [addLine, error, isOpen, isUpdating, lines, quote, removeLine, updateQuantity]);
+  }), [addLine, clearCart, error, isOpen, isUpdating, lines, quote, removeLine, updateQuantity]);
 
   return (
     <Toast.Provider duration={4500} swipeDirection="right">
@@ -268,7 +277,7 @@ export function CustomerCartDrawer() {
   return (
     <Drawer
       description={quote ? "Prices and choices are checked with the current kitchen menu." : "Your local selections stay here until the kitchen can check them."}
-      footer={quote ? <div className="customer-cart-total"><span>Subtotal</span><strong>{formatCustomerPrice(quote.subtotal_minor, quote.currency_code)}</strong><p>Checkout and order submission begin in the next phase.</p></div> : undefined}
+      footer={quote ? <div className="customer-cart-total"><span>Subtotal</span><strong>{formatCustomerPrice(quote.subtotal_minor, quote.currency_code)}</strong><Link className="nosh-button customer-cart-checkout-link" data-size="default" data-variant="primary" to="/checkout" onClick={() => setOpen(false)}>Checkout</Link><p>Choose fulfilment details and confirm this local-demo order on the next screen.</p></div> : undefined}
       open={isOpen}
       title={`Your cart · ${cartCount} ${itemLabel}`}
       onOpenChange={setOpen}

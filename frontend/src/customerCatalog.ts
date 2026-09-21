@@ -66,12 +66,18 @@ export type CustomerLocation = {
   id: string;
   name: string;
   slug: string;
+  address_text: string;
+  pickup_instructions: string | null;
+  delivery_area_text: string | null;
+  pickup_available: boolean;
+  delivery_available: boolean;
   preparation_minutes: number;
 };
 
 export type CustomerCatalogSnapshot = {
   items: CustomerMenuItem[];
   location: CustomerLocation | null;
+  locations: CustomerLocation[];
 };
 
 export type CustomerCartLineInput = {
@@ -152,7 +158,7 @@ export async function readCustomerCatalog(
     readCatalogJson<CustomerMenuItem[]>("/api/v1/catalog/menu-items", signal),
     readCatalogJson<CustomerLocation[]>("/api/v1/catalog/locations", signal),
   ]);
-  return { items, location: locations[0] ?? null };
+  return { items, location: locations[0] ?? null, locations };
 }
 
 export async function readCustomerMenuItem(

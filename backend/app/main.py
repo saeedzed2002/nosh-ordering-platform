@@ -8,6 +8,7 @@ from app.routers.auth import router as auth_router
 from app.routers.catalog import router as catalog_router
 from app.routers.health import router as health_router
 from app.routers.media import router as media_router
+from app.routers.orders import router as orders_router
 
 settings = get_settings()
 
@@ -34,3 +35,4 @@ app.include_router(admin_home_router)
 app.include_router(admin_menu_router)
 app.include_router(catalog_router)
 app.include_router(media_router)
+app.include_router(orders_router)
