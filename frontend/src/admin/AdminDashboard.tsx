@@ -1,4 +1,4 @@
-import { ArrowUpRight, CheckCircle2, Image, PanelsTopLeft } from "lucide-react";
+import { ArrowUpRight, CheckCircle2, Image, PanelsTopLeft, UtensilsCrossed } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { useAdminSession } from "./session";
@@ -23,6 +23,15 @@ export function AdminDashboard() {
         </div>
       </header>
       <section className="admin-action-grid" aria-label="Publishing actions">
+        <Link className="admin-action-card" to="/admin/menu">
+          <UtensilsCrossed aria-hidden="true" />
+          <div>
+            <span>Menu service</span>
+            <strong>Keep every plate accurate</strong>
+            <p>Create food items, set price and options, record allergens, and pause service safely.</p>
+          </div>
+          <ArrowUpRight aria-hidden="true" />
+        </Link>
         <Link className="admin-action-card" to="/admin/home">
           <PanelsTopLeft aria-hidden="true" />
           <div>

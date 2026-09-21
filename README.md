@@ -9,7 +9,8 @@ claim production readiness.
 This repository currently implements the Phase 0 foundation, the Phase 1
 experience/information-architecture contract, the Phase 2 component foundation,
 the Phase 3 dynamic customer landing page, the Phase 4 durable backend
-foundation, and the Phase 5 local administration workflow:
+foundation, the Phase 5 local administration workflow, and the Phase 6 menu
+administration workflow, and the Phase 7 customer menu/discovery workflow:
 
 - independent React/Vite and FastAPI applications;
 - a PostgreSQL-backed readiness endpoint;
@@ -19,19 +20,27 @@ foundation, and the Phase 5 local administration workflow:
   failure states, content inventory, and deterministic future seed-data shape.
 - reusable accessible controls, status states, focus-managed overlays, local
   licensed typography, motion rules, and Storybook component review.
-- customer-facing content discovery, seeded preview dishes, and a clearly
-  browser-only cart with an explicit home-to-menu-to-cart route.
+- initial customer-facing content discovery and an explicit route map for the
+  later ordering flow.
 - Phase 4 durable catalog schema, versioned migration, repeatable local seed,
   volume-backed media validation/thumbnailing, read APIs, and server-enforced
   administrator access/refresh tokens.
 - Phase 5 role-protected administrator routes, durable home-page drafts and
   publish history, focal-point-aware media management, and non-technical
   `/admin/home` and `/admin/media` workflows.
+- Phase 6 role-protected menu desk and guided food workflow with server-enforced
+  image/category publication rules, price and demo discount controls, option
+  groups, allergens, category visibility, availability schedules, curated
+  collections, featured placement, and durable catalog-change records.
+- Phase 7 live customer `/menu` and `/menu/{slug}` routes. They read published
+  API data, preserve search/filter/sort choices in the URL, display availability
+  before a next action, and make ingredients, allergens, known choices,
+  preparation information, complementary dishes, empty/error/retry states, and
+  the absence of nutrition data clear.
 
-The customer experience is intentionally limited to the completed landing,
-location, and about routes. Menu detail, customization, checkout, tracking,
-and customer accounts are not yet implemented and must not be represented as
-working product flows.
+Customer menu discovery and dish detail are implemented. Customization, cart,
+checkout, tracking, and customer accounts are not yet implemented and must not
+be represented as working product flows.
 
 ## Local run
 
@@ -105,5 +114,6 @@ assumptions, and docs/phase-1-experience-information-architecture.md for the
 planned customer/admin behavior and seed-data contract. See
 docs/phase-2-design-system.md for component and interaction conventions, and
 docs/phase-3-customer-landing.md for the dynamic landing-page contract. See
-docs/phase-5-admin-home-and-media.md for the completed local administration
-workflow and its boundaries.
+docs/phase-5-admin-home-and-media.md for the home/media workflow and
+docs/phase-6-menu-administration.md for the menu administration contract and
+docs/phase-7-customer-menu.md for the live menu/discovery contract.

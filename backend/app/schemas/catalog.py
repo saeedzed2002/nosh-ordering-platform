@@ -60,6 +60,7 @@ class OptionResponse(BaseModel):
 class OptionGroupResponse(BaseModel):
     id: UUID
     name: str
+    kind: str
     minimum_selections: int
     maximum_selections: int
     display_order: int
@@ -74,7 +75,10 @@ class MenuItemResponse(BaseModel):
     ingredients: list[str]
     dietary_tags: list[str]
     base_price_minor: int
+    demo_discount_minor: int
+    final_price_minor: int
     currency_code: str
+    display_order: int
     category: CategoryResponse
     availability: AvailabilityState
     media: MediaSummary | None
@@ -98,3 +102,4 @@ class HomeContentResponse(BaseModel):
     action_href: str | None
     display_order: int
     media: MediaSummary | None
+    featured_menu_item_slug: str | None

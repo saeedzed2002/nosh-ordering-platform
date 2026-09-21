@@ -10,9 +10,11 @@ from sqlalchemy.orm import joinedload
 from app.core.config import Settings, get_settings
 from app.db.session import SessionDep
 from app.models import (
+    Category,
     HomeContent,
     HomeContentRevision,
     MediaAsset,
+    MenuItem,
     PublicationState,
     RoleCode,
     User,
@@ -85,6 +87,30 @@ def media_usages(session: SessionDep) -> dict[object, list[MediaUsageResponse]]:
                 content_key=content_key,
                 label=f"Home revision: {content_key.replace('-', ' ')}",
                 state=revision.action.value,
+            )
+        )
+
+    menu_items = session.scalars(
+        select(MenuItem).where(MenuItem.media_id.is_not(None))
+    ).all()
+    for item in menu_items:
+        usages.setdefault(item.media_id, []).append(
+            MediaUsageResponse(
+                content_key=f"menu-item:{item.slug}",
+                label=f"Menu item: {item.name}",
+                state=PublicationState(item.publication_state).value,
+            )
+        )
+
+    categories = session.scalars(
+        select(Category).where(Category.media_id.is_not(None))
+    ).all()
+    for category in categories:
+        usages.setdefault(category.media_id, []).append(
+            MediaUsageResponse(
+                content_key=f"category:{category.slug}",
+                label=f"Menu category: {category.name}",
+                state="published" if category.is_published else "draft",
             )
         )
     return usages
@@ -280,6 +306,28 @@ def update_media(
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="Replace this live home image before returning it to draft.",
+            )
+        is_live_menu_image = session.scalar(
+            select(MenuItem.id).where(
+                MenuItem.media_id == media.id,
+                MenuItem.publication_state == PublicationState.PUBLISHED,
+            )
+        )
+        if is_live_menu_image is not None:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Replace this live menu image before returning it to draft.",
+            )
+        is_live_category_image = session.scalar(
+            select(Category.id).where(
+                Category.media_id == media.id,
+                Category.is_published.is_(True),
+            )
+        )
+        if is_live_category_image is not None:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Replace this live category image before returning it to draft.",
             )
 
     next_focal_x = changes.get("focal_point_x", media.focal_point_x)

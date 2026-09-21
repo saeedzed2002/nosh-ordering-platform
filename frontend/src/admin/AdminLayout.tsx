@@ -1,4 +1,4 @@
-import { Image, LayoutDashboard, LogOut, PanelsTopLeft } from "lucide-react";
+import { Image, LayoutDashboard, LogOut, PanelsTopLeft, UtensilsCrossed } from "lucide-react";
 import { NavLink, Outlet } from "react-router-dom";
 
 import { Button } from "../components/ui/Button";
@@ -6,6 +6,7 @@ import { useAdminSession } from "./session";
 
 const navigationItems = [
   { label: "Home", to: "/admin/home", icon: PanelsTopLeft },
+  { label: "Menu", to: "/admin/menu", icon: UtensilsCrossed },
   { label: "Media", to: "/admin/media", icon: Image },
 ];
 

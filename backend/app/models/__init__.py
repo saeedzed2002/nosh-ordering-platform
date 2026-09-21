@@ -1,6 +1,8 @@
 from app.models.domain import (
     Allergen,
     AvailabilityState,
+    CatalogChange,
+    CatalogChangeAction,
     Category,
     CollectionMenuItem,
     CuratedCollection,
@@ -15,6 +17,7 @@ from app.models.domain import (
     OperatingHour,
     Option,
     OptionGroup,
+    OptionGroupKind,
     PublicationState,
     Role,
     RoleCode,
@@ -24,6 +27,8 @@ from app.models.domain import (
 __all__ = [
     "Allergen",
     "AvailabilityState",
+    "CatalogChange",
+    "CatalogChangeAction",
     "Category",
     "CollectionMenuItem",
     "CuratedCollection",
@@ -38,6 +43,7 @@ __all__ = [
     "OperatingHour",
     "Option",
     "OptionGroup",
+    "OptionGroupKind",
     "PublicationState",
     "Role",
     "RoleCode",

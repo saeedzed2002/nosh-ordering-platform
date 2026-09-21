@@ -1,536 +1,142 @@
 import { useEffect, useState } from "react";
 
-import {
-  ArrowDown,
-  ArrowUpRight,
-  Clock3,
-  MapPin,
-  ShoppingBag,
-  Sparkles,
-  Truck,
-} from "lucide-react";
-import { Toast } from "radix-ui";
+import { ArrowRight, Clock3, MapPin, Sparkles, Truck } from "lucide-react";
 import { Link } from "react-router-dom";
 
-import { Button } from "./components/ui/Button";
-import { Drawer } from "./components/ui/Drawer";
-import { FoodCard } from "./components/ui/FoodCard";
-import { QuantityStepper } from "./components/ui/QuantityStepper";
+import heroImage from "./assets/nosh-hero-food.webp";
+import seasonalSpreadImage from "./assets/nosh-seasonal-spread.webp";
 import {
-  ToastNotice,
-  ToastViewport,
-  type ToastMessage,
-} from "./components/ui/ToastNotice";
-import {
-  customerBenefits,
-  kitchenMoments,
-  menuPreviewCategories,
-  menuPreviewDishes,
-  type MenuPreviewCategory,
-  type MenuPreviewDish,
-} from "./data/customerPreview";
+  CustomerMenuCard,
+  CustomerSiteFooter,
+  CustomerSiteHeader,
+} from "./CustomerMenuPage";
+import { customerMediaUrl, useCustomerCatalog } from "./customerCatalog";
 import { apiBaseUrl } from "./site";
 
-type FulfillmentMethod = "pickup" | "delivery";
 type ApiStatus = "checking" | "ready" | "unavailable";
 
 type HealthPayload = {
   status: "ok" | "degraded";
-  database: {
-    status: "ok" | "unavailable";
-  };
+  database: { status: "ok" | "unavailable" };
 };
 
 type PublishedHomeContent = {
   content_key: string;
   heading: string;
   supporting_copy: string;
-  action_label: string | null;
-  action_href: string | null;
-  media: {
-    id: string;
-    alt_text: string;
-  } | null;
+  featured_menu_item_slug: string | null;
+  media: { id: string; alt_text: string } | null;
 };
 
-const navigationItems: Array<{ label: string; href?: string; to?: string }> = [
-  { label: "Menu", href: "#menu" },
-  { label: "About", to: "/about" },
-  { label: "Locations", to: "/locations" },
+const kitchenMoments = [
+  { time: "09:00", label: "Prep starts with the market" },
+  { time: "12:00", label: "First pickup leaves the pass" },
+  { time: "18:00", label: "Last delivery heads across town" },
 ];
 
-const moneyFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-});
-
-function formatPrice(priceCents: number) {
-  return moneyFormatter.format(priceCents / 100);
-}
-
-function scrollToSection(id: string) {
-  document.getElementById(id)?.scrollIntoView({
-    behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
-      ? "auto"
-      : "smooth",
-  });
-}
+const customerBenefits = [
+  { title: "Cooked for the handoff", copy: "A short menu lets the kitchen make each dish close to the moment it leaves." },
+  { title: "A clear way home", copy: "Pickup and delivery are stated early, so the next decision is never hidden." },
+  { title: "Seasonal by design", copy: "The menu shifts with what is good now instead of pretending every dish is permanent." },
+];
 
 function App() {
-  const [activeCategory, setActiveCategory] = useState<MenuPreviewCategory["id"]>("all");
-  const [cart, setCart] = useState<Record<string, number>>({});
-  const [fulfillment, setFulfillment] = useState<FulfillmentMethod>("pickup");
-  const [isCartOpen, setIsCartOpen] = useState(false);
   const [apiStatus, setApiStatus] = useState<ApiStatus>("checking");
-  const [notice, setNotice] = useState<ToastMessage | null>(null);
   const [publishedHomeContent, setPublishedHomeContent] = useState<PublishedHomeContent[]>([]);
+  const catalog = useCustomerCatalog();
 
   useEffect(() => {
-    let isCancelled = false;
-
-    async function checkApiHealth() {
-      try {
-        const response = await fetch(`${apiBaseUrl}/api/v1/health`);
+    const controller = new AbortController();
+    void fetch(`${apiBaseUrl}/api/v1/health`, { signal: controller.signal })
+      .then(async (response) => {
         const payload = (await response.json()) as HealthPayload;
-
-        if (!isCancelled) {
-          setApiStatus(
-            response.ok && payload.status === "ok" && payload.database.status === "ok"
-              ? "ready"
-              : "unavailable",
-          );
-        }
-      } catch {
-        if (!isCancelled) {
+        setApiStatus(response.ok && payload.status === "ok" && payload.database.status === "ok" ? "ready" : "unavailable");
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) {
           setApiStatus("unavailable");
         }
-      }
-    }
-
-    void checkApiHealth();
-
-    return () => {
-      isCancelled = true;
-    };
+      });
+    return () => controller.abort();
   }, []);
 
   useEffect(() => {
-    let isCancelled = false;
-
-    void fetch(`${apiBaseUrl}/api/v1/catalog/home`)
+    const controller = new AbortController();
+    void fetch(`${apiBaseUrl}/api/v1/catalog/home`, {
+      cache: "no-store",
+      signal: controller.signal,
+    })
       .then(async (response) => {
         if (!response.ok) {
           throw new Error("Published home content is unavailable.");
         }
         return response.json() as Promise<PublishedHomeContent[]>;
       })
-      .then((content) => {
-        if (!isCancelled) {
-          setPublishedHomeContent(content);
-        }
-      })
+      .then((content) => setPublishedHomeContent(content))
       .catch(() => {
-        // The Phase 3 local visual fallback remains usable when the API is down.
+        // The home page stays usable while the editable content service recovers.
       });
-
-    return () => {
-      isCancelled = true;
-    };
+    return () => controller.abort();
   }, []);
 
-  const featuredDishes =
-    activeCategory === "all"
-      ? menuPreviewDishes
-      : menuPreviewDishes.filter((dish) => dish.category === activeCategory);
-  const cartItems = menuPreviewDishes
-    .filter((dish) => cart[dish.id] !== undefined)
-    .map((dish) => ({ dish, quantity: cart[dish.id] }));
-  const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
-  const cartTotal = cartItems.reduce(
-    (total, item) => total + item.dish.priceCents * item.quantity,
-    0,
-  );
-  const fulfillmentLabel = fulfillment === "pickup" ? "Pickup" : "Delivery";
-  const apiStatusLabel =
-    apiStatus === "checking"
-      ? "Checking local API"
-      : apiStatus === "ready"
-        ? "Local API ready"
-        : "Local API unavailable";
-  const homeSection = (contentKey: string) =>
-    publishedHomeContent.find((content) => content.content_key === contentKey);
+  const homeSection = (contentKey: string) => publishedHomeContent.find((content) => content.content_key === contentKey);
   const heroContent = homeSection("hero");
   const featuredContent = homeSection("featured-dish");
   const kitchenContent = homeSection("kitchen-story");
   const locationContent = homeSection("location-callout");
-  const thumbnailUrl = (mediaId: string) => `${apiBaseUrl}/api/v1/media/${mediaId}/thumbnail`;
-  const customerImageSource = (content: PublishedHomeContent | undefined, fallback: string) =>
+  const imageSource = (content: PublishedHomeContent | undefined, fallback: string) =>
     content?.media && !content.media.alt_text.startsWith("Development placeholder")
-      ? thumbnailUrl(content.media.id)
+      ? customerMediaUrl(content.media)
       : fallback;
-  const customerImageAlt = (content: PublishedHomeContent | undefined, fallback: string) =>
+  const imageAlt = (content: PublishedHomeContent | undefined, fallback: string) =>
     content?.media && !content.media.alt_text.startsWith("Development placeholder")
       ? content.media.alt_text
       : fallback;
-
-  function selectFulfillment(method: FulfillmentMethod) {
-    setFulfillment(method);
-    setNotice({
-      title: `${method === "pickup" ? "Pickup" : "Delivery"} selected`,
-      description: "The local cart keeps this choice for the current page session.",
-    });
-  }
-
-  function addDish(dish: MenuPreviewDish) {
-    setCart((currentCart) => {
-      const quantity = currentCart[dish.id] ?? 0;
-
-      return {
-        ...currentCart,
-        [dish.id]: Math.min(quantity + 1, 9),
-      };
-    });
-    setNotice({
-      title: "Added to your cart",
-      description: `${dish.name} is ready to review in the local demo cart.`,
-    });
-  }
-
-  function updateQuantity(dishId: string, quantity: number) {
-    setCart((currentCart) => {
-      if (quantity <= 0) {
-        const remainingCart = { ...currentCart };
-        delete remainingCart[dishId];
-        return remainingCart;
-      }
-
-      return { ...currentCart, [dishId]: Math.min(quantity, 9) };
-    });
-  }
+  const preparationMinutes = catalog.data?.location?.preparation_minutes ?? null;
+  const featuredItems = catalog.data?.items.slice(0, 3) ?? [];
+  const apiStatusLabel = apiStatus === "checking" ? "Checking local API" : apiStatus === "ready" ? "Local API ready" : "Local API unavailable";
+  const featuredDestination = featuredContent?.featured_menu_item_slug ? `/menu/${featuredContent.featured_menu_item_slug}` : "/menu";
 
   return (
-    <Toast.Provider duration={5000} swipeDirection="right">
-      <div className="app-shell">
-        <a className="skip-link" href="#main-content">
-          Skip to main content
-        </a>
-
-        <header className="site-header">
-          <a className="wordmark" href="#top" aria-label="Nosh home">
-            Nosh<span>.</span>
-          </a>
-          <nav aria-label="Primary navigation">
-            <ul className="navigation-list">
-              {navigationItems.map((item) => (
-                <li key={item.label}>
-                  {item.to ? <Link to={item.to}>{item.label}</Link> : <a href={item.href}>{item.label}</a>}
-                </li>
-              ))}
-            </ul>
-          </nav>
-          <div className="header-actions">
-            <button
-              className="cart-trigger"
-              type="button"
-              aria-haspopup="dialog"
-              aria-label={`Open cart, ${cartCount} ${cartCount === 1 ? "item" : "items"}`}
-              onClick={() => setIsCartOpen(true)}
-            >
-              <ShoppingBag aria-hidden="true" className="cart-icon" />
-              <span className="cart-label">Cart</span>
-              <span className="cart-count" aria-hidden="true">
-                {cartCount}
-              </span>
-            </button>
-            <Button className="header-order-button" onClick={() => scrollToSection("menu")}>
-              Order now
-            </Button>
+    <div className="app-shell">
+      <a className="skip-link" href="#main-content">Skip to main content</a>
+      <CustomerSiteHeader />
+      <main id="main-content">
+        <section className="hero" id="top" aria-labelledby="hero-title">
+          <div className="hero-copy">
+            <p className="eyebrow"><Sparkles aria-hidden="true" /> Today at Nosh</p>
+            <h1 id="hero-title">{heroContent?.heading ?? "A table worth coming home to."}</h1>
+            <p className="hero-intro">{heroContent?.supporting_copy ?? "Thoughtful plates from one local kitchen, cooked close to the moment you pick them up or send them your way."}</p>
+            <div className="hero-actions">
+              <Link className="nosh-button" data-size="default" data-variant="primary" to="/menu">Explore today’s menu <ArrowRight aria-hidden="true" /></Link>
+              <Link className="quiet-link" to="/about">Meet the kitchen <ArrowRight aria-hidden="true" /></Link>
+            </div>
+            <div className="fulfillment-block"><span>Today’s service</span><div className="home-service-note"><MapPin aria-hidden="true" /> Pickup from one local kitchen</div></div>
           </div>
-        </header>
+          <div className="hero-media"><img src={imageSource(heroContent, heroImage) ?? heroImage} alt={imageAlt(heroContent, "Grilled chicken with hummus, chickpeas, cucumber, herbs, and flatbread")} /><div className="hero-media-note"><span>Kitchen note</span><strong>{preparationMinutes ? `About ${preparationMinutes} minutes from the pass.` : "Today’s timing is set with the live menu."}</strong></div></div>
+        </section>
 
-        <main id="main-content">
-          <section className="hero" id="top" aria-labelledby="hero-title">
-            <div className="hero-copy">
-              <p className="eyebrow"><Sparkles aria-hidden="true" /> Today at Nosh</p>
-              <h1 id="hero-title">{heroContent?.heading ?? "A table worth coming home to."}</h1>
-              <p className="hero-intro">
-                {heroContent?.supporting_copy ?? "Thoughtful plates from one local kitchen, cooked close to the moment you pick them up or send them your way."}
-              </p>
+        <section className="service-strip" aria-label="Today’s service details"><span><Clock3 aria-hidden="true" /> {preparationMinutes ? `About ${preparationMinutes} min from the kitchen` : "Timing updates with the menu"}</span><span>One kitchen · one local route</span><span>Short menu · cooked to order</span></section>
 
-              <div className="hero-actions">
-                <Button onClick={() => scrollToSection("menu")}>
-                  Explore today’s menu <ArrowDown aria-hidden="true" />
-                </Button>
-                <Link className="quiet-link" to="/about">
-                  Meet the kitchen <ArrowUpRight aria-hidden="true" />
-                </Link>
-              </div>
+        <section className="landing-section featured-section" id="menu" aria-labelledby="menu-title">
+          <div className="section-heading section-heading--split"><div><p className="eyebrow">Live kitchen board</p><h2 id="menu-title">Today’s menu, as the kitchen has set it.</h2></div><p>These dishes read from the published catalogue. Availability, dietary tags, allergens, and prices no longer come from seeded browser data.</p></div>
+          {catalog.status === "loading" ? <div className="home-menu-loading"><Clock3 aria-hidden="true" /> Setting today’s table…</div> : null}
+          {catalog.status === "error" ? <div className="home-menu-error">The live menu is temporarily unavailable. <Link to="/menu">Try the full menu</Link> once the local service is ready.</div> : null}
+          {featuredItems.length ? <div className="customer-menu-grid home-customer-menu-grid">{featuredItems.map((item) => <CustomerMenuCard key={item.id} item={item} preparationMinutes={preparationMinutes} />)}</div> : null}
+          <Link className="home-menu-link" to="/menu">Browse the full menu <ArrowRight aria-hidden="true" /></Link>
+        </section>
 
-              <div className="fulfillment-block">
-                <span>How should it arrive?</span>
-                <div
-                  className="fulfillment-selector"
-                  role="group"
-                  aria-label="Preferred fulfillment method"
-                >
-                  {(["pickup", "delivery"] as const).map((method) => {
-                    const isSelected = fulfillment === method;
-                    const label = method === "pickup" ? "Pickup" : "Delivery";
-                    const Icon = method === "pickup" ? MapPin : Truck;
+        <section className="promotion-panel" aria-labelledby="promotion-title"><img src={imageSource(featuredContent, seasonalSpreadImage) ?? seasonalSpreadImage} alt={imageAlt(featuredContent, "Vegetable flatbread, citrus salad, and whipped feta on a warm cream table")} /><div><p className="eyebrow">From the kitchen</p><h2 id="promotion-title">{featuredContent?.heading ?? "A good meal starts with one clear choice."}</h2><p>{featuredContent?.supporting_copy ?? "Open the live menu to compare ingredients, allergen notes, availability, and the dishes that belong alongside each other."}</p><Link className="nosh-button" data-size="default" data-variant="secondary" to={featuredDestination}>See the dish <ArrowRight aria-hidden="true" /></Link></div></section>
 
-                    return (
-                      <button
-                        key={method}
-                        className={isSelected ? "selected" : undefined}
-                        type="button"
-                        aria-pressed={isSelected}
-                        onClick={() => selectFulfillment(method)}
-                      >
-                        <Icon aria-hidden="true" />
-                        {label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
+        <section className="landing-section kitchen-section" id="kitchen" aria-labelledby="kitchen-title"><div className="kitchen-story"><p className="eyebrow">A kitchen with a point of view</p><h2 id="kitchen-title">{kitchenContent?.heading ?? "The less a dish travels, the more it feels like dinner."}</h2><p>{kitchenContent?.supporting_copy ?? "Nosh is designed around a small, legible handoff: food starts in one kitchen, moves through one ordering flow, and reaches one local table."}</p><Link className="quiet-link" to="/locations">Find the kitchen <MapPin aria-hidden="true" /></Link></div><img className="kitchen-section-image" src={imageSource(kitchenContent, seasonalSpreadImage) ?? seasonalSpreadImage} alt={imageAlt(kitchenContent, "Citrus and fennel salad with herbs and pistachios in a ceramic bowl")} /><ol className="kitchen-moments">{kitchenMoments.map((moment) => <li key={moment.time}><time>{moment.time}</time><span>{moment.label}</span></li>)}</ol></section>
 
-            <div className="hero-media">
-              <img
-                src={customerImageSource(heroContent, menuPreviewDishes[0].image)}
-                alt={customerImageAlt(heroContent, menuPreviewDishes[0].alt)}
-              />
-              <div className="hero-media-note">
-                <span>Kitchen note</span>
-                <strong>Harissa chicken is on the fire.</strong>
-              </div>
-            </div>
-          </section>
+        <section className="benefits-section" aria-label="Nosh principles">{customerBenefits.map((benefit, index) => <article key={benefit.title}><span>0{index + 1}</span><h2>{benefit.title}</h2><p>{benefit.copy}</p></article>)}</section>
 
-          <section className="service-strip" aria-label="Today’s service details">
-            <span><Clock3 aria-hidden="true" /> Lunch pickup starts at 12:00</span>
-            <span>One kitchen · one local route</span>
-            <span>Short menu · cooked to order</span>
-          </section>
-
-          <section className="landing-section category-section" id="menu" aria-labelledby="menu-title">
-            <div className="section-heading section-heading--split">
-              <div>
-                <p className="eyebrow">Start with appetite</p>
-                <h2 id="menu-title">A short menu with room to linger.</h2>
-              </div>
-              <p>
-                Pick a direction. Every preview dish below is seeded local data for
-                this interactive customer demo.
-              </p>
-            </div>
-
-            <div className="category-rail" aria-label="Menu categories">
-              {menuPreviewCategories.map((category) => (
-                <button
-                  key={category.id}
-                  className={activeCategory === category.id ? "selected" : undefined}
-                  type="button"
-                  aria-pressed={activeCategory === category.id}
-                  onClick={() => setActiveCategory(category.id)}
-                >
-                  <strong>{category.label}</strong>
-                  <span>{category.note}</span>
-                </button>
-              ))}
-            </div>
-          </section>
-
-          <section className="landing-section featured-section" id="featured-dishes" aria-labelledby="featured-title">
-            <div className="section-heading section-heading--split">
-              <div>
-                <p className="eyebrow">Featured dishes</p>
-                <h2 id="featured-title">
-                  {activeCategory === "all" ? "Choose your first plate." : "One good place to begin."}
-                </h2>
-              </div>
-              <p className="featured-cart-note">{cartCount} {cartCount === 1 ? "item" : "items"} in cart</p>
-            </div>
-
-            <div className="featured-grid">
-              {featuredDishes.map((dish) => (
-                <FoodCard
-                  key={dish.id}
-                  actionLabel="Add to cart"
-                  alt={dish.alt}
-                  description={dish.description}
-                  image={dish.image}
-                  name={dish.name}
-                  price={formatPrice(dish.priceCents)}
-                  status={dish.status}
-                  tags={dish.tags}
-                  onAction={() => addDish(dish)}
-                />
-              ))}
-            </div>
-          </section>
-
-          <section className="promotion-panel" aria-labelledby="promotion-title">
-            <img
-              src={customerImageSource(featuredContent, menuPreviewDishes[1].image)}
-              alt={customerImageAlt(
-                featuredContent,
-                "Vegetable flatbread, citrus salad, and whipped feta on a warm cream table",
-              )}
-            />
-            <div>
-              <p className="eyebrow">Limited table</p>
-              <h2 id="promotion-title">{featuredContent?.heading ?? "Weeknight food, with a little more daylight."}</h2>
-              <p>
-                {featuredContent?.supporting_copy ?? "Our flatbread and seasonal sides are made for sharing. The local demo menu changes without claiming real-time availability."}
-              </p>
-              <Button variant="secondary" onClick={() => scrollToSection("featured-dishes")}>
-                See featured plates <ArrowUpRight aria-hidden="true" />
-              </Button>
-            </div>
-          </section>
-
-          <section className="landing-section kitchen-section" id="kitchen" aria-labelledby="kitchen-title">
-            <div className="kitchen-story">
-              <p className="eyebrow">A kitchen with a point of view</p>
-              <h2 id="kitchen-title">{kitchenContent?.heading ?? "The less a dish travels, the more it feels like dinner."}</h2>
-              <p>
-                {kitchenContent?.supporting_copy ?? "Nosh is designed around a small, legible handoff: food starts in one kitchen, moves through one ordering flow, and reaches one local table."}
-              </p>
-              <Link className="quiet-link" to="/locations">
-                Find the kitchen <MapPin aria-hidden="true" />
-              </Link>
-            </div>
-            <img
-              className="kitchen-section-image"
-              src={customerImageSource(kitchenContent, menuPreviewDishes[2].image)}
-              alt={customerImageAlt(
-                kitchenContent,
-                "Citrus and fennel salad with herbs and pistachios in a ceramic bowl",
-              )}
-            />
-            <ol className="kitchen-moments">
-              {kitchenMoments.map((moment) => (
-                <li key={moment.time}>
-                  <time>{moment.time}</time>
-                  <span>{moment.label}</span>
-                </li>
-              ))}
-            </ol>
-          </section>
-
-          <section className="benefits-section" aria-label="Nosh principles">
-            {customerBenefits.map((benefit, index) => (
-              <article key={benefit.title}>
-                <span>0{index + 1}</span>
-                <h2>{benefit.title}</h2>
-                <p>{benefit.copy}</p>
-              </article>
-            ))}
-          </section>
-
-          <section className="location-section" id="location" aria-labelledby="location-title">
-            <div>
-              <p className="eyebrow">One place to find us</p>
-              <h2 id="location-title">{locationContent?.heading ?? "Nosh on Market Street."}</h2>
-              <p>{locationContent?.supporting_copy ?? "12 Market Street · Tuesday to Sunday · 12:00–21:30"}</p>
-            </div>
-            <img
-              className="location-section-image"
-              src={customerImageSource(locationContent, menuPreviewDishes[3].image)}
-              alt={customerImageAlt(
-                locationContent,
-                "A warm cream table set with grilled citrus and an olive branch",
-              )}
-            />
-            <div className="location-actions">
-              <span><MapPin aria-hidden="true" /> Pickup from the kitchen</span>
-              <Button onClick={() => setIsCartOpen(true)}>
-                Review cart <ShoppingBag aria-hidden="true" />
-              </Button>
-            </div>
-          </section>
-        </main>
-
-        <footer className="site-footer">
-          <div className="footer-wordmark">Nosh<span>.</span></div>
-          <div>
-            <p>Local food, set at a human pace.</p>
-            <span className={`api-status api-status-${apiStatus}`} aria-live="polite">
-              <span aria-hidden="true" />
-              {apiStatusLabel}
-            </span>
-          </div>
-          <div className="footer-links">
-            <a href="#menu">Menu</a>
-            <Link to="/about">About</Link>
-            <Link to="/locations">Locations</Link>
-          </div>
-        </footer>
-
-        <Drawer
-          description={
-            cartCount === 0
-              ? "Add a preview dish to see the seeded local cart in action."
-              : `${fulfillmentLabel} is selected for this browser-only cart session.`
-          }
-          open={isCartOpen}
-          title={`Your cart${cartCount > 0 ? ` · ${cartCount}` : ""}`}
-          onOpenChange={setIsCartOpen}
-          footer={
-            <div className="cart-drawer-footer">
-              {cartCount > 0 ? <strong>Subtotal {formatPrice(cartTotal)}</strong> : null}
-              <Button className="drawer-action" variant="secondary" onClick={() => setIsCartOpen(false)}>
-                Continue exploring
-              </Button>
-            </div>
-          }
-        >
-          {cartItems.length === 0 ? (
-            <div className="empty-cart">
-              <ShoppingBag aria-hidden="true" />
-              <p>Your cart is waiting for its first plate.</p>
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  setIsCartOpen(false);
-                  scrollToSection("menu");
-                }}
-              >
-                Browse dishes
-              </Button>
-            </div>
-          ) : (
-            <div className="cart-item-list">
-              {cartItems.map(({ dish, quantity }) => (
-                <article key={dish.id} className="cart-item">
-                  <img src={dish.image} alt="" />
-                  <div>
-                    <div className="cart-item-heading">
-                      <h3>{dish.name}</h3>
-                      <strong>{formatPrice(dish.priceCents * quantity)}</strong>
-                    </div>
-                    <p>{formatPrice(dish.priceCents)} each</p>
-                    <QuantityStepper
-                      max={9}
-                      min={0}
-                      value={quantity}
-                      onValueChange={(nextQuantity) => updateQuantity(dish.id, nextQuantity)}
-                    />
-                  </div>
-                </article>
-              ))}
-              <p className="cart-boundary-note">
-                This cart is page-session state only. Menu validation, persistence, and
-                checkout arrive in later phases.
-              </p>
-            </div>
-          )}
-        </Drawer>
-      </div>
-      <ToastNotice notice={notice} onOpenChange={(open) => !open && setNotice(null)} />
-      <ToastViewport />
-    </Toast.Provider>
+        <section className="location-section" id="location" aria-labelledby="location-title"><div><p className="eyebrow">One place to find us</p><h2 id="location-title">{locationContent?.heading ?? "Nosh on Market Street."}</h2><p>{locationContent?.supporting_copy ?? "12 Market Street · Tuesday to Sunday · 12:00–21:30"}</p></div><img className="location-section-image" src={imageSource(locationContent, seasonalSpreadImage) ?? seasonalSpreadImage} alt={imageAlt(locationContent, "A warm cream table set with grilled citrus and an olive branch")} /><div className="location-actions"><span><Truck aria-hidden="true" /> Service details stay visible before ordering</span><Link className="nosh-button" data-size="default" data-variant="primary" to="/menu">Browse menu <ArrowRight aria-hidden="true" /></Link></div></section>
+      </main>
+      <CustomerSiteFooter />
+      <span className={`api-status api-status-${apiStatus} home-api-status`} aria-live="polite"><span aria-hidden="true" />{apiStatusLabel}</span>
+    </div>
   );
 }
 

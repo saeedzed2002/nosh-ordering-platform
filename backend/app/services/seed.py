@@ -570,7 +570,8 @@ def seed_database(session: Session, settings: Settings) -> None:
         (
             "featured-dish",
             "Harissa chicken is on the fire.",
-            "A featured local-demo dish, ready for the later menu API.",
+            "A featured dish with its full ingredients, availability, and notes ready "
+            "to explore.",
             "View dish",
             "#menu",
             "dish-harissa-chicken-bowl",

@@ -4,9 +4,12 @@ import { AdminDashboard } from "./admin/AdminDashboard";
 import { AdminLayout } from "./admin/AdminLayout";
 import { AdminSignInPage } from "./admin/AdminSignInPage";
 import { HomeEditorPage } from "./admin/HomeEditorPage";
+import { MenuEditorPage } from "./admin/MenuEditorPage";
+import { MenuWorkspacePage } from "./admin/MenuWorkspacePage";
 import { MediaLibraryPage } from "./admin/MediaLibraryPage";
 import { AdminSessionProvider, useAdminSession } from "./admin/session";
 import App from "./App";
+import { CustomerMenuItemPage, CustomerMenuPage } from "./CustomerMenuPage";
 import { AboutPage, LocationsPage, NotFoundPage } from "./SitePages";
 
 function AdminGuard() {
@@ -26,6 +29,8 @@ export function AppRouter() {
       <AdminSessionProvider>
         <Routes>
           <Route path="/" element={<App />} />
+          <Route path="/menu" element={<CustomerMenuPage />} />
+          <Route path="/menu/:slug" element={<CustomerMenuItemPage />} />
           <Route path="/locations" element={<LocationsPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/admin/sign-in" element={<AdminSignInPage />} />
@@ -33,6 +38,9 @@ export function AppRouter() {
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/home" element={<HomeEditorPage />} />
             <Route path="/admin/media" element={<MediaLibraryPage />} />
+            <Route path="/admin/menu" element={<MenuWorkspacePage />} />
+            <Route path="/admin/menu/new" element={<MenuEditorPage />} />
+            <Route path="/admin/menu/:slug" element={<MenuEditorPage />} />
           </Route>
           <Route path="*" element={<NotFoundPage />} />
         </Routes>

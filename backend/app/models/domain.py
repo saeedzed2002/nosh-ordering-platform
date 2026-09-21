@@ -47,6 +47,20 @@ class AvailabilityState(StrEnum):
     SCHEDULED = "scheduled"
 
 
+class OptionGroupKind(StrEnum):
+    CHOICE = "choice"
+    EXTRA = "extra"
+    REMOVAL = "removal"
+
+
+class CatalogChangeAction(StrEnum):
+    CREATED = "created"
+    UPDATED = "updated"
+    AVAILABILITY_CHANGED = "availability_changed"
+    FEATURED_PLACEMENT_CHANGED = "featured_placement_changed"
+    VISIBILITY_CHANGED = "visibility_changed"
+
+
 class TimestampedUUIDMixin:
     id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
     created_at: Mapped[datetime] = mapped_column(
@@ -202,6 +216,12 @@ class MenuItem(TimestampedUUIDMixin, Base):
     __table_args__ = (
         CheckConstraint("slug = lower(slug)", name="menu_item_slug_lower"),
         CheckConstraint("base_price_minor >= 0", name="base_price_non_negative"),
+        CheckConstraint("demo_discount_minor >= 0", name="discount_non_negative"),
+        CheckConstraint(
+            "demo_discount_minor <= base_price_minor",
+            name="discount_lte_base_price",
+        ),
+        CheckConstraint("display_order >= 0", name="display_order_non_negative"),
         CheckConstraint(
             "length(currency_code) = 3 AND currency_code = upper(currency_code)",
             name="currency_code_uppercase",
@@ -224,7 +244,9 @@ class MenuItem(TimestampedUUIDMixin, Base):
     ingredients: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
     dietary_tags: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
     base_price_minor: Mapped[int] = mapped_column(Integer, nullable=False)
+    demo_discount_minor: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     currency_code: Mapped[str] = mapped_column(String(3), nullable=False, default="USD")
+    display_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     publication_state: Mapped[PublicationState] = mapped_column(
         String(16), nullable=False, default=PublicationState.DRAFT
     )
@@ -332,12 +354,16 @@ class OptionGroup(TimestampedUUIDMixin, Base):
             "maximum_selections >= minimum_selections", name="maximum_gte_minimum"
         ),
         CheckConstraint("display_order >= 0", name="display_order_non_negative"),
+        CheckConstraint("kind IN ('choice', 'extra', 'removal')", name="kind_allowed"),
     )
 
     menu_item_id: Mapped[UUID] = mapped_column(
         ForeignKey("menu_items.id"), nullable=False, index=True
     )
     name: Mapped[str] = mapped_column(String(160), nullable=False)
+    kind: Mapped[OptionGroupKind] = mapped_column(
+        String(16), nullable=False, default=OptionGroupKind.CHOICE
+    )
     minimum_selections: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     maximum_selections: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     display_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
@@ -427,6 +453,30 @@ class HomeContentRevision(TimestampedUUIDMixin, Base):
     home_content: Mapped[HomeContent] = relationship(back_populates="revisions")
     actor: Mapped[User] = relationship()
     media: Mapped[MediaAsset | None] = relationship()
+
+
+class CatalogChange(TimestampedUUIDMixin, Base):
+    __tablename__ = "catalog_changes"
+    __table_args__ = (
+        CheckConstraint(
+            "entity_type IN ('menu_item', 'category', 'collection', 'featured')",
+            name="entity_type_allowed",
+        ),
+        CheckConstraint(
+            "action IN ('created', 'updated', 'availability_changed', "
+            "'featured_placement_changed', 'visibility_changed')",
+            name="action_allowed",
+        ),
+    )
+
+    actor_id: Mapped[UUID] = mapped_column(
+        ForeignKey("users.id"), nullable=False, index=True
+    )
+    entity_type: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    entity_id: Mapped[UUID | None] = mapped_column(Uuid, index=True)
+    action: Mapped[CatalogChangeAction] = mapped_column(String(48), nullable=False)
+    snapshot: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
+    actor: Mapped[User] = relationship()
 
 
 def model_metadata() -> Any:
