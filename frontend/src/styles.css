@@ -324,6 +324,9 @@ select:focus-visible {
   min-width: 2.75rem;
   place-items: center;
   border-inline: 1px solid var(--border-subtle);
+  background: var(--surface-raised);
+  color: var(--text-strong);
+  font-variant-numeric: tabular-nums;
   font-weight: 700;
 }
 
