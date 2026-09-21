@@ -8,7 +8,8 @@ claim production readiness.
 
 This repository currently implements the Phase 0 foundation, the Phase 1
 experience/information-architecture contract, the Phase 2 component foundation,
-and the Phase 3 dynamic customer landing page:
+the Phase 3 dynamic customer landing page, the Phase 4 durable backend
+foundation, and the Phase 5 local administration workflow:
 
 - independent React/Vite and FastAPI applications;
 - a PostgreSQL-backed readiness endpoint;
@@ -23,10 +24,14 @@ and the Phase 3 dynamic customer landing page:
 - Phase 4 durable catalog schema, versioned migration, repeatable local seed,
   volume-backed media validation/thumbnailing, read APIs, and server-enforced
   administrator access/refresh tokens.
+- Phase 5 role-protected administrator routes, durable home-page drafts and
+  publish history, focal-point-aware media management, and non-technical
+  `/admin/home` and `/admin/media` workflows.
 
-The customer experience is an intentionally limited visual shell. Menu,
-customization, checkout, tracking, accounts, and administration are not yet
-implemented and must not be represented as working product flows.
+The customer experience is intentionally limited to the completed landing,
+location, and about routes. Menu detail, customization, checkout, tracking,
+and customer accounts are not yet implemented and must not be represented as
+working product flows.
 
 ## Local run
 
@@ -99,4 +104,6 @@ See docs/phase-0-foundation.md for architectural choices and explicit
 assumptions, and docs/phase-1-experience-information-architecture.md for the
 planned customer/admin behavior and seed-data contract. See
 docs/phase-2-design-system.md for component and interaction conventions, and
-docs/phase-3-customer-landing.md for the dynamic landing-page contract.
+docs/phase-3-customer-landing.md for the dynamic landing-page contract. See
+docs/phase-5-admin-home-and-media.md for the completed local administration
+workflow and its boundaries.

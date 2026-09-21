@@ -4,8 +4,9 @@
 
 Phase 4 introduces the durable backend boundary shared by the customer and
 administrator experiences. This document fixes the storage and ownership rules
-before the first migration is written. It does not claim that any of the models
-or endpoints below are implemented yet.
+implemented by this phase and records the contract that its migration, seed
+command, APIs, and protected media routes must uphold. Later customer ordering
+and administrator-management flows remain outside this phase.
 
 ## Data rules
 

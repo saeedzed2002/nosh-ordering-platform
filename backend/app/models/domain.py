@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, time
+from datetime import UTC, datetime, time
 from enum import StrEnum
 from typing import Any
 from uuid import UUID, uuid4
@@ -33,6 +33,11 @@ class RoleCode(StrEnum):
 
 class PublicationState(StrEnum):
     DRAFT = "draft"
+    PUBLISHED = "published"
+
+
+class HomeContentRevisionAction(StrEnum):
+    DRAFT_SAVED = "draft_saved"
     PUBLISHED = "published"
 
 
@@ -386,6 +391,42 @@ class HomeContent(TimestampedUUIDMixin, Base):
     )
     media: Mapped[MediaAsset | None] = relationship()
     menu_item: Mapped[MenuItem | None] = relationship()
+    revisions: Mapped[list[HomeContentRevision]] = relationship(
+        back_populates="home_content", cascade="all, delete-orphan"
+    )
+
+
+class HomeContentRevision(TimestampedUUIDMixin, Base):
+    __tablename__ = "home_content_revisions"
+    __table_args__ = (
+        CheckConstraint(
+            "action IN ('draft_saved', 'published')",
+            name="action_allowed",
+        ),
+    )
+
+    home_content_id: Mapped[UUID] = mapped_column(
+        ForeignKey("home_content.id"), nullable=False, index=True
+    )
+    actor_id: Mapped[UUID] = mapped_column(
+        ForeignKey("users.id"), nullable=False, index=True
+    )
+    media_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("media_assets.id"), index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        server_default=func.now(),
+        nullable=False,
+    )
+    action: Mapped[HomeContentRevisionAction] = mapped_column(
+        String(32), nullable=False
+    )
+    snapshot: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
+    home_content: Mapped[HomeContent] = relationship(back_populates="revisions")
+    actor: Mapped[User] = relationship()
+    media: Mapped[MediaAsset | None] = relationship()
 
 
 def model_metadata() -> Any:

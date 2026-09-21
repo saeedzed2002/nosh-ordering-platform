@@ -10,6 +10,7 @@ import {
   Truck,
 } from "lucide-react";
 import { Toast } from "radix-ui";
+import { Link } from "react-router-dom";
 
 import { Button } from "./components/ui/Button";
 import { Drawer } from "./components/ui/Drawer";
@@ -40,10 +41,22 @@ type HealthPayload = {
   };
 };
 
-const navigationItems = [
+type PublishedHomeContent = {
+  content_key: string;
+  heading: string;
+  supporting_copy: string;
+  action_label: string | null;
+  action_href: string | null;
+  media: {
+    id: string;
+    alt_text: string;
+  } | null;
+};
+
+const navigationItems: Array<{ label: string; href?: string; to?: string }> = [
   { label: "Menu", href: "#menu" },
-  { label: "Kitchen", href: "#kitchen" },
-  { label: "Location", href: "#location" },
+  { label: "About", to: "/about" },
+  { label: "Locations", to: "/locations" },
 ];
 
 const moneyFormatter = new Intl.NumberFormat("en-US", {
@@ -70,6 +83,7 @@ function App() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [apiStatus, setApiStatus] = useState<ApiStatus>("checking");
   const [notice, setNotice] = useState<ToastMessage | null>(null);
+  const [publishedHomeContent, setPublishedHomeContent] = useState<PublishedHomeContent[]>([]);
 
   useEffect(() => {
     let isCancelled = false;
@@ -100,6 +114,30 @@ function App() {
     };
   }, []);
 
+  useEffect(() => {
+    let isCancelled = false;
+
+    void fetch(`${apiBaseUrl}/api/v1/catalog/home`)
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error("Published home content is unavailable.");
+        }
+        return response.json() as Promise<PublishedHomeContent[]>;
+      })
+      .then((content) => {
+        if (!isCancelled) {
+          setPublishedHomeContent(content);
+        }
+      })
+      .catch(() => {
+        // The Phase 3 local visual fallback remains usable when the API is down.
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
+
   const featuredDishes =
     activeCategory === "all"
       ? menuPreviewDishes
@@ -119,6 +157,21 @@ function App() {
       : apiStatus === "ready"
         ? "Local API ready"
         : "Local API unavailable";
+  const homeSection = (contentKey: string) =>
+    publishedHomeContent.find((content) => content.content_key === contentKey);
+  const heroContent = homeSection("hero");
+  const featuredContent = homeSection("featured-dish");
+  const kitchenContent = homeSection("kitchen-story");
+  const locationContent = homeSection("location-callout");
+  const thumbnailUrl = (mediaId: string) => `${apiBaseUrl}/api/v1/media/${mediaId}/thumbnail`;
+  const customerImageSource = (content: PublishedHomeContent | undefined, fallback: string) =>
+    content?.media && !content.media.alt_text.startsWith("Development placeholder")
+      ? thumbnailUrl(content.media.id)
+      : fallback;
+  const customerImageAlt = (content: PublishedHomeContent | undefined, fallback: string) =>
+    content?.media && !content.media.alt_text.startsWith("Development placeholder")
+      ? content.media.alt_text
+      : fallback;
 
   function selectFulfillment(method: FulfillmentMethod) {
     setFulfillment(method);
@@ -169,8 +222,8 @@ function App() {
           <nav aria-label="Primary navigation">
             <ul className="navigation-list">
               {navigationItems.map((item) => (
-                <li key={item.href}>
-                  <a href={item.href}>{item.label}</a>
+                <li key={item.label}>
+                  {item.to ? <Link to={item.to}>{item.label}</Link> : <a href={item.href}>{item.label}</a>}
                 </li>
               ))}
             </ul>
@@ -199,19 +252,18 @@ function App() {
           <section className="hero" id="top" aria-labelledby="hero-title">
             <div className="hero-copy">
               <p className="eyebrow"><Sparkles aria-hidden="true" /> Today at Nosh</p>
-              <h1 id="hero-title">A table worth coming home to.</h1>
+              <h1 id="hero-title">{heroContent?.heading ?? "A table worth coming home to."}</h1>
               <p className="hero-intro">
-                Thoughtful plates from one local kitchen, cooked close to the moment
-                you pick them up or send them your way.
+                {heroContent?.supporting_copy ?? "Thoughtful plates from one local kitchen, cooked close to the moment you pick them up or send them your way."}
               </p>
 
               <div className="hero-actions">
                 <Button onClick={() => scrollToSection("menu")}>
                   Explore today’s menu <ArrowDown aria-hidden="true" />
                 </Button>
-                <a className="quiet-link" href="#kitchen">
+                <Link className="quiet-link" to="/about">
                   Meet the kitchen <ArrowUpRight aria-hidden="true" />
-                </a>
+                </Link>
               </div>
 
               <div className="fulfillment-block">
@@ -245,8 +297,8 @@ function App() {
 
             <div className="hero-media">
               <img
-                src={menuPreviewDishes[0].image}
-                alt={menuPreviewDishes[0].alt}
+                src={customerImageSource(heroContent, menuPreviewDishes[0].image)}
+                alt={customerImageAlt(heroContent, menuPreviewDishes[0].alt)}
               />
               <div className="hero-media-note">
                 <span>Kitchen note</span>
@@ -320,15 +372,17 @@ function App() {
 
           <section className="promotion-panel" aria-labelledby="promotion-title">
             <img
-              src={menuPreviewDishes[1].image}
-              alt="Vegetable flatbread, citrus salad, and whipped feta on a warm cream table"
+              src={customerImageSource(featuredContent, menuPreviewDishes[1].image)}
+              alt={customerImageAlt(
+                featuredContent,
+                "Vegetable flatbread, citrus salad, and whipped feta on a warm cream table",
+              )}
             />
             <div>
               <p className="eyebrow">Limited table</p>
-              <h2 id="promotion-title">Weeknight food, with a little more daylight.</h2>
+              <h2 id="promotion-title">{featuredContent?.heading ?? "Weeknight food, with a little more daylight."}</h2>
               <p>
-                Our flatbread and seasonal sides are made for sharing. The local demo
-                menu changes without claiming real-time availability.
+                {featuredContent?.supporting_copy ?? "Our flatbread and seasonal sides are made for sharing. The local demo menu changes without claiming real-time availability."}
               </p>
               <Button variant="secondary" onClick={() => scrollToSection("featured-dishes")}>
                 See featured plates <ArrowUpRight aria-hidden="true" />
@@ -339,15 +393,22 @@ function App() {
           <section className="landing-section kitchen-section" id="kitchen" aria-labelledby="kitchen-title">
             <div className="kitchen-story">
               <p className="eyebrow">A kitchen with a point of view</p>
-              <h2 id="kitchen-title">The less a dish travels, the more it feels like dinner.</h2>
+              <h2 id="kitchen-title">{kitchenContent?.heading ?? "The less a dish travels, the more it feels like dinner."}</h2>
               <p>
-                Nosh is designed around a small, legible handoff: food starts in one
-                kitchen, moves through one ordering flow, and reaches one local table.
+                {kitchenContent?.supporting_copy ?? "Nosh is designed around a small, legible handoff: food starts in one kitchen, moves through one ordering flow, and reaches one local table."}
               </p>
-              <a className="quiet-link" href="#location">
+              <Link className="quiet-link" to="/locations">
                 Find the kitchen <MapPin aria-hidden="true" />
-              </a>
+              </Link>
             </div>
+            <img
+              className="kitchen-section-image"
+              src={customerImageSource(kitchenContent, menuPreviewDishes[2].image)}
+              alt={customerImageAlt(
+                kitchenContent,
+                "Citrus and fennel salad with herbs and pistachios in a ceramic bowl",
+              )}
+            />
             <ol className="kitchen-moments">
               {kitchenMoments.map((moment) => (
                 <li key={moment.time}>
@@ -371,9 +432,17 @@ function App() {
           <section className="location-section" id="location" aria-labelledby="location-title">
             <div>
               <p className="eyebrow">One place to find us</p>
-              <h2 id="location-title">Nosh on Market Street.</h2>
-              <p>12 Market Street · Tuesday to Sunday · 12:00–21:30</p>
+              <h2 id="location-title">{locationContent?.heading ?? "Nosh on Market Street."}</h2>
+              <p>{locationContent?.supporting_copy ?? "12 Market Street · Tuesday to Sunday · 12:00–21:30"}</p>
             </div>
+            <img
+              className="location-section-image"
+              src={customerImageSource(locationContent, menuPreviewDishes[3].image)}
+              alt={customerImageAlt(
+                locationContent,
+                "A warm cream table set with grilled citrus and an olive branch",
+              )}
+            />
             <div className="location-actions">
               <span><MapPin aria-hidden="true" /> Pickup from the kitchen</span>
               <Button onClick={() => setIsCartOpen(true)}>
@@ -394,8 +463,8 @@ function App() {
           </div>
           <div className="footer-links">
             <a href="#menu">Menu</a>
-            <a href="#kitchen">Kitchen</a>
-            <a href="#location">Location</a>
+            <Link to="/about">About</Link>
+            <Link to="/locations">Locations</Link>
           </div>
         </footer>
 

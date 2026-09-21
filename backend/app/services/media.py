@@ -86,6 +86,8 @@ def persist_image(
     original_filename: str,
     validated_image: ValidatedImage,
     *,
+    focal_point_x: int = 50,
+    focal_point_y: int = 50,
     media_id: UUID | None = None,
 ) -> StoredImage:
     resolved_id = media_id or uuid4()
@@ -101,9 +103,12 @@ def persist_image(
     original_path.write_bytes(validated_image.payload)
     try:
         with Image.open(BytesIO(validated_image.payload)) as opened_image:
-            normalized_image = ImageOps.exif_transpose(opened_image).convert("RGB")
-            normalized_image.thumbnail(THUMBNAIL_SIZE, Image.Resampling.LANCZOS)
-            normalized_image.save(thumbnail_path, format="WEBP", quality=80, method=6)
+            write_thumbnail(
+                opened_image,
+                thumbnail_path,
+                focal_point_x=focal_point_x,
+                focal_point_y=focal_point_y,
+            )
     except OSError:
         original_path.unlink(missing_ok=True)
         thumbnail_path.unlink(missing_ok=True)
@@ -120,6 +125,57 @@ def persist_image(
 def remove_stored_image(media_root: Path, stored_image: StoredImage) -> None:
     (media_root / stored_image.original_path).unlink(missing_ok=True)
     (media_root / stored_image.thumbnail_path).unlink(missing_ok=True)
+
+
+def crop_to_focal_square(
+    image: Image.Image, *, focal_point_x: int, focal_point_y: int
+) -> Image.Image:
+    normalized_image = ImageOps.exif_transpose(image).convert("RGB")
+    width, height = normalized_image.size
+    side = min(width, height)
+    focus_x = width * focal_point_x / 100
+    focus_y = height * focal_point_y / 100
+    left = min(max(round(focus_x - side / 2), 0), width - side)
+    top = min(max(round(focus_y - side / 2), 0), height - side)
+    return normalized_image.crop((left, top, left + side, top + side))
+
+
+def write_thumbnail(
+    image: Image.Image,
+    thumbnail_path: Path,
+    *,
+    focal_point_x: int,
+    focal_point_y: int,
+) -> None:
+    thumbnail = crop_to_focal_square(
+        image,
+        focal_point_x=focal_point_x,
+        focal_point_y=focal_point_y,
+    )
+    thumbnail.thumbnail(THUMBNAIL_SIZE, Image.Resampling.LANCZOS)
+    temporary_path = thumbnail_path.with_suffix(".tmp")
+    try:
+        thumbnail.save(temporary_path, format="WEBP", quality=80, method=6)
+        temporary_path.replace(thumbnail_path)
+    finally:
+        temporary_path.unlink(missing_ok=True)
+
+
+def regenerate_thumbnail(
+    media_root: Path,
+    *,
+    original_path: str,
+    thumbnail_path: str,
+    focal_point_x: int,
+    focal_point_y: int,
+) -> None:
+    with Image.open(media_root / original_path) as opened_image:
+        write_thumbnail(
+            opened_image,
+            media_root / thumbnail_path,
+            focal_point_x=focal_point_x,
+            focal_point_y=focal_point_y,
+        )
 
 
 def create_development_seed_image(
