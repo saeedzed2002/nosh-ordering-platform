@@ -20,7 +20,7 @@ from app.models import (
     RoleCode,
     User,
 )
-from app.services.seed import seed_database, seeded_id
+from app.services.seed import PROJECT_SEED_MEDIA, seed_database, seeded_id
 
 
 def test_migration_creates_phase_4_tables(seeded_settings) -> None:
@@ -52,7 +52,22 @@ def test_seed_is_repeatable_and_creates_the_catalog(seeded_settings) -> None:
         }
         assert set(roles_by_code) == set(RoleCode)
         assert roles_by_code[RoleCode.KITCHEN].id == seeded_id("role:kitchen")
-        assert session.query(MediaAsset).count() == 25
+        assert session.query(MediaAsset).count() == len(PROJECT_SEED_MEDIA)
+
+        menu_items = session.scalars(select(MenuItem)).all()
+        expected_media_ids = {seeded_id(f"media:{key}") for key in PROJECT_SEED_MEDIA}
+        assert {item.media_id for item in menu_items} == expected_media_ids
+
+        seeded_media = session.scalars(
+            select(MediaAsset).where(MediaAsset.id.in_(expected_media_ids))
+        ).all()
+        assert {media.original_filename for media in seeded_media} == {
+            filename for filename, _ in PROJECT_SEED_MEDIA.values()
+        }
+        for media in seeded_media:
+            assert media.mime_type == "image/png"
+            assert (seeded_settings.media_root / media.original_path).is_file()
+            assert (seeded_settings.media_root / media.thumbnail_path).is_file()
 
 
 def test_seed_restores_rows_with_location_scoped_ids(seeded_settings) -> None:

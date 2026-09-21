@@ -8,14 +8,17 @@ import {
   LoaderCircle,
   Search,
   ShieldCheck,
+  ShoppingBag,
   SlidersHorizontal,
   UtensilsCrossed,
   X,
 } from "lucide-react";
-import { useDeferredValue, useMemo, useTransition } from "react";
+import { useDeferredValue, useMemo, useState, useTransition } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 
 import { Button } from "./components/ui/Button";
+import { QuantityStepper } from "./components/ui/QuantityStepper";
+import { CustomerCartDrawer, useCustomerCart } from "./customerCart";
 import {
   availabilityLabel,
   customerMediaUrl,
@@ -26,6 +29,7 @@ import {
   useCustomerCatalog,
   useCustomerMenuItem,
 } from "./customerCatalog";
+import { customerCartLineId, previewCustomerPrice, selectedOptionIds, selectionIssues, type CustomerSelections } from "./customerOrder";
 
 type MenuSort = "curated" | "price-low" | "price-high" | "name";
 
@@ -55,6 +59,7 @@ function customerMenuPath(slug: string): string {
 }
 
 export function CustomerSiteHeader() {
+  const { cartCount, openCart } = useCustomerCart();
   return (
     <header className="site-header customer-site-header">
       <Link className="wordmark" to="/" aria-label="Nosh home">Nosh<span>.</span></Link>
@@ -65,9 +70,15 @@ export function CustomerSiteHeader() {
           <li><Link to="/locations">Locations</Link></li>
         </ul>
       </nav>
-      <Link className="nosh-button header-order-button" data-size="default" data-variant="primary" to="/menu">
-        View menu <ArrowRight aria-hidden="true" />
-      </Link>
+      <div className="customer-header-actions">
+        <Button className="header-cart-button" size="compact" variant="secondary" onClick={openCart}>
+          <ShoppingBag aria-hidden="true" /> Cart <span aria-label={`${cartCount} items in cart`}>{cartCount}</span>
+        </Button>
+        <Link className="nosh-button header-order-button" data-size="default" data-variant="primary" to="/menu">
+          View menu <ArrowRight aria-hidden="true" />
+        </Link>
+      </div>
+      <CustomerCartDrawer />
     </header>
   );
 }
@@ -311,6 +322,98 @@ function RelatedDishes({ items, preparationMinutes }: { items: CustomerMenuItem[
   return <section className="customer-related-dishes" aria-labelledby="related-dishes-title"><div className="customer-section-heading"><p className="eyebrow">Keep the table moving</p><h2 id="related-dishes-title">You might also like</h2></div><div className="customer-menu-grid">{items.map((item) => <CustomerMenuCard key={item.id} item={item} preparationMinutes={preparationMinutes} />)}</div></section>;
 }
 
+function CustomerDishOrderPanel({ item }: { item: CustomerMenuItem }) {
+  const { addLine, isUpdating } = useCustomerCart();
+  const [selections, setSelections] = useState<CustomerSelections>({});
+  const [quantity, setQuantity] = useState(1);
+  const [note, setNote] = useState("");
+  const [formIssues, setFormIssues] = useState<Record<string, string>>({});
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const available = item.availability === "available";
+  const previewPrice = previewCustomerPrice(item, selections);
+
+  const toggleOption = (groupId: string, optionId: string, maximumSelections: number, forceSelection: boolean) => {
+    setFormIssues((current) => ({ ...current, [groupId]: "" }));
+    setSelections((current) => {
+      const selected = current[groupId] ?? [];
+      if (forceSelection) {
+        return { ...current, [groupId]: [optionId] };
+      }
+      if (selected.includes(optionId)) {
+        return { ...current, [groupId]: selected.filter((selectedId) => selectedId !== optionId) };
+      }
+      if (selected.length >= maximumSelections) {
+        setFormIssues((issues) => ({ ...issues, [groupId]: `Choose no more than ${maximumSelections} options.` }));
+        return current;
+      }
+      return { ...current, [groupId]: [...selected, optionId] };
+    });
+  };
+
+  const addToCart = async () => {
+    const nextIssues = selectionIssues(item, selections);
+    if (Object.keys(nextIssues).length) {
+      setFormIssues(nextIssues);
+      return;
+    }
+    setFormIssues({});
+    setSubmitError(null);
+    try {
+      await addLine({
+        client_line_id: customerCartLineId(),
+        menu_item_slug: item.slug,
+        note: note.trim() || null,
+        option_ids: selectedOptionIds(selections),
+        quantity,
+      });
+      setSelections({});
+      setQuantity(1);
+      setNote("");
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "This dish could not be added to the cart.");
+    }
+  };
+
+  return (
+    <section className="customer-dish-options" aria-labelledby="dish-options-title">
+      <div className="customer-section-heading"><p className="eyebrow">Made your way</p><h2 id="dish-options-title">Choices available with this dish</h2><p>{available ? "Choose what works for you. The kitchen checks every choice and the final total before the dish reaches your cart." : "The kitchen has this dish paused. Its choices are shown here, but it cannot be added to an order."}</p></div>
+      <div className="customer-order-workspace">
+        <form className="customer-order-form" onSubmit={(event) => { event.preventDefault(); void addToCart(); }}>
+          {item.option_groups.map((group) => {
+            const selected = selections[group.id] ?? [];
+            const isSingleRequiredChoice = group.kind === "choice" && group.minimum_selections === 1 && group.maximum_selections === 1;
+            const issue = formIssues[group.id];
+            return <fieldset key={group.id} aria-invalid={issue ? true : undefined} disabled={!available || isUpdating}>
+              <legend>{group.name} {group.minimum_selections ? <em>Required</em> : <em>Optional</em>}</legend>
+              <p>{group.minimum_selections ? `Choose at least ${group.minimum_selections}` : "Choose any if you like"}{group.maximum_selections > 1 ? ` · up to ${group.maximum_selections}` : ""}</p>
+              <div className="customer-order-options">
+                {group.options.map((option) => {
+                  const isSelected = selected.includes(option.id);
+                  return <label key={option.id} className={isSelected ? "selected" : undefined}>
+                    <input checked={isSelected} name={group.id} type={isSingleRequiredChoice ? "radio" : "checkbox"} value={option.id} onChange={() => toggleOption(group.id, option.id, group.maximum_selections, isSingleRequiredChoice)} />
+                    <span><strong>{option.name}</strong><small>{option.price_delta_minor ? `+${formatCustomerPrice(option.price_delta_minor, item.currency_code)}` : "Included"}</small></span>
+                  </label>;
+                })}
+              </div>
+              {issue ? <small className="customer-order-issue" role="alert">{issue}</small> : null}
+            </fieldset>;
+          })}
+          <label className="customer-order-note">A note for the kitchen<textarea disabled={!available || isUpdating} maxLength={500} placeholder="Optional: anything the kitchen should know?" value={note} onChange={(event) => setNote(event.target.value)} /></label>
+          {submitError ? <p className="customer-order-issue" role="alert">{submitError}</p> : null}
+        </form>
+        <aside className="customer-order-summary" aria-live="polite">
+          <span>Current selection</span>
+          <strong>{formatCustomerPrice(previewPrice * quantity, item.currency_code)}</strong>
+          <small>{quantity > 1 ? `${formatCustomerPrice(previewPrice, item.currency_code)} each` : "Price updates as you make choices"}</small>
+          <div><span>Quantity</span><QuantityStepper disabled={!available || isUpdating} max={20} value={quantity} onValueChange={setQuantity} /></div>
+          <Button disabled={!available || isUpdating} loading={isUpdating} onClick={() => void addToCart()}>{available ? "Add to cart" : "Unavailable today"} <ShoppingBag aria-hidden="true" /></Button>
+          <p>{available ? "The total is confirmed by the kitchen before this is saved in your cart." : "Check back when the kitchen makes this dish available again."}</p>
+        </aside>
+      </div>
+    </section>
+  );
+}
+
 export function CustomerMenuItemPage() {
   const { slug } = useParams();
   const itemResource = useCustomerMenuItem(slug);
@@ -346,7 +449,7 @@ export function CustomerMenuItemPage() {
               <h1>{item.name}</h1>
               <p>{item.description}</p>
               <div className="customer-dish-hero-meta"><AvailabilityBadge item={item} /><strong>{formatCustomerPrice(item.final_price_minor, item.currency_code)}</strong>{location ? <span><Clock3 aria-hidden="true" /> About {location.preparation_minutes} min</span> : null}</div>
-              {item.availability !== "available" ? <p className="customer-unavailable-note">This dish can be viewed, but it cannot be added to an order while the kitchen has it paused.</p> : <p className="customer-detail-boundary">Customization and the cart open in the next ordering step.</p>}
+              {item.availability !== "available" ? <p className="customer-unavailable-note">This dish can be viewed, but it cannot be added to an order while the kitchen has it paused.</p> : <p className="customer-detail-boundary">Choose options, quantity, and a kitchen note below. The live menu confirms the final total before the dish reaches your cart.</p>}
             </div>
             <section className="customer-dish-gallery" aria-label="Dish image gallery">
               <figure><CustomerImage alt={item.media?.alt_text ?? item.name} media={item.media} /><figcaption>Dish image</figcaption></figure>
@@ -359,7 +462,7 @@ export function CustomerMenuItemPage() {
             <aside className="customer-dish-facts"><div><span>Kitchen time</span><strong>{location ? `About ${location.preparation_minutes} min` : "Shown at checkout"}</strong></div><div><span>Nutrition</span><strong>Not published yet</strong><p>Nutrition facts appear here when the kitchen supplies them.</p></div><div><span>Availability</span><strong>{availabilityLabel(item.availability)}</strong></div></aside>
           </section>
 
-          {item.option_groups.length ? <section className="customer-dish-options" aria-labelledby="dish-options-title"><div className="customer-section-heading"><p className="eyebrow">Made your way</p><h2 id="dish-options-title">Choices available with this dish</h2><p>You will make these selections in the next ordering step.</p></div><div>{item.option_groups.map((group) => <article key={group.id}><div><h3>{group.name}</h3><p>{group.minimum_selections > 0 ? `Choose at least ${group.minimum_selections}` : "Optional"}{group.maximum_selections > 1 ? ` · up to ${group.maximum_selections}` : ""}</p></div><ul>{group.options.map((option) => <li key={option.id}><span>{option.name}</span>{option.price_delta_minor > 0 ? <strong>+{formatCustomerPrice(option.price_delta_minor, item.currency_code)}</strong> : <span>Included</span>}</li>)}</ul></article>)}</div></section> : null}
+          <CustomerDishOrderPanel key={item.id} item={item} />
           <RelatedDishes items={relatedItems} preparationMinutes={location?.preparation_minutes ?? null} />
         </> : null}
       </main>

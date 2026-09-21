@@ -9,8 +9,9 @@ claim production readiness.
 This repository currently implements the Phase 0 foundation, the Phase 1
 experience/information-architecture contract, the Phase 2 component foundation,
 the Phase 3 dynamic customer landing page, the Phase 4 durable backend
-foundation, the Phase 5 local administration workflow, and the Phase 6 menu
-administration workflow, and the Phase 7 customer menu/discovery workflow:
+foundation, the Phase 5 local administration workflow, the Phase 6 menu
+administration workflow, the Phase 7 customer menu/discovery workflow, and the
+Phase 8 trustworthy-cart workflow:
 
 - independent React/Vite and FastAPI applications;
 - a PostgreSQL-backed readiness endpoint;
@@ -22,9 +23,10 @@ administration workflow, and the Phase 7 customer menu/discovery workflow:
   licensed typography, motion rules, and Storybook component review.
 - initial customer-facing content discovery and an explicit route map for the
   later ordering flow.
-- Phase 4 durable catalog schema, versioned migration, repeatable local seed,
-  volume-backed media validation/thumbnailing, read APIs, and server-enforced
-  administrator access/refresh tokens.
+- Phase 4 durable catalog schema, versioned migration, repeatable local seed
+  with committed demo-food source images copied into the media volume,
+  validation/thumbnailing, read APIs, and server-enforced administrator
+  access/refresh tokens.
 - Phase 5 role-protected administrator routes, durable home-page drafts and
   publish history, focal-point-aware media management, and non-technical
   `/admin/home` and `/admin/media` workflows.
@@ -37,10 +39,14 @@ administration workflow, and the Phase 7 customer menu/discovery workflow:
   before a next action, and make ingredients, allergens, known choices,
   preparation information, complementary dishes, empty/error/retry states, and
   the absence of nutrition data clear.
+- Phase 8 dish configuration and a versioned local cart. Required and optional
+  options, selection limits, quantities, notes, current-price preview, cart
+  edits, complementary suggestions, and the final quoted subtotal are checked
+  against the published server catalog before a line is retained.
 
-Customer menu discovery and dish detail are implemented. Customization, cart,
-checkout, tracking, and customer accounts are not yet implemented and must not
-be represented as working product flows.
+Customer menu discovery, dish customization, and the local cart are
+implemented. Checkout, order creation, tracking, and customer accounts are not
+yet implemented and must not be represented as working product flows.
 
 ## Local run
 
@@ -80,7 +86,8 @@ docker compose down
 ~~~
 
 Removing the database volume deletes local demo data. Do that only when an
-intentional reset is required:
+intentional reset is required. The next migration-and-seed sequence recreates
+the initial products and their two committed demo-food images:
 
 ~~~powershell
 docker compose down --volumes
@@ -116,4 +123,5 @@ docs/phase-2-design-system.md for component and interaction conventions, and
 docs/phase-3-customer-landing.md for the dynamic landing-page contract. See
 docs/phase-5-admin-home-and-media.md for the home/media workflow and
 docs/phase-6-menu-administration.md for the menu administration contract and
-docs/phase-7-customer-menu.md for the live menu/discovery contract.
+docs/phase-7-customer-menu.md for the live menu/discovery contract. See
+docs/phase-8-trustworthy-cart.md for the cart and server-quote contract.

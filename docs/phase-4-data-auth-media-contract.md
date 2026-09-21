@@ -41,8 +41,12 @@ and administrator-management flows remain outside this phase.
 
 ## Local media rules
 
-- Original files live under a named Docker volume, never under a public source
-  directory or the repository.
+- Uploaded originals and their derivatives live under a named Docker volume,
+  never under a public source directory or the repository.
+- Two generated Nosh demo-food images are committed under
+  `backend/app/assets/seed`. The local seed validates and copies them into the
+  media volume; customer and administrator routes never serve those source
+  files directly from the repository.
 - Metadata records keep MIME type, byte size, dimensions, checksum, alt text,
   focal point, credit, and derivative paths.
 - Upload validation will allow an explicit image MIME allowlist and a bounded
@@ -56,8 +60,9 @@ and administrator-management flows remain outside this phase.
 1. Add database engine/session lifecycle and migration tooling.
 2. Create users, roles, locations, hours, media, categories, and menu tables.
 3. Create collections, allergens, option groups, options, and join tables.
-4. Add an idempotent local seed command for the single Nosh location and the
-   preview dishes already used by the frontend.
+4. Add an idempotent local seed command for the single Nosh location, the
+   preview dishes already used by the frontend, and versioned demo images that
+   recreate the initial product media after a clean clone or volume reset.
 5. Add documented read endpoints and only then protected administrator sign-in
    and write endpoints.
 

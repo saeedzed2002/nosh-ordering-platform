@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session, joinedload
 from app.db.session import get_engine
 from app.models import User
 from app.services.auth import create_token
+from app.services.seed import PROJECT_SEED_MEDIA
 
 
 def test_seeded_catalog_is_available_from_versioned_api(seeded_client) -> None:
@@ -66,13 +67,13 @@ def test_owner_tokens_protect_media_and_refresh(seeded_client) -> None:
         headers={"Authorization": f"Bearer {token_pair['access_token']}"},
     )
     assert admin_media.status_code == 200
-    assert len(admin_media.json()) == 25
+    assert len(admin_media.json()) == len(PROJECT_SEED_MEDIA)
     original_media = seeded_client.get(
         f"/api/v1/admin/media/{admin_media.json()[0]['id']}/original",
         headers={"Authorization": f"Bearer {token_pair['access_token']}"},
     )
     assert original_media.status_code == 200
-    assert original_media.headers["content-type"] == "image/webp"
+    assert original_media.headers["content-type"] == "image/png"
 
     refreshed = seeded_client.post(
         "/api/v1/auth/refresh", json={"refresh_token": token_pair["refresh_token"]}

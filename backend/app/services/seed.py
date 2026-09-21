@@ -29,13 +29,46 @@ from app.models import (
     User,
 )
 from app.services.auth import hash_password
-from app.services.media import (
-    create_development_seed_image,
-    persist_image,
-    validate_image_payload,
-)
+from app.services.media import persist_image, validate_image_payload
 
 SEED_NAMESPACE = "https://nosh.local/phase-4/"
+PROJECT_SEED_MEDIA_ROOT = Path(__file__).parents[1] / "assets" / "seed"
+PROJECT_SEED_MEDIA = {
+    "grill-plate": (
+        "nosh-menu-grill-kofta.png",
+        "A grilled Nosh plate with flatbread, chickpeas, cucumber, and pickled onion.",
+    ),
+    "mushroom-bowl": (
+        "nosh-menu-mushroom-bowl.png",
+        "A Nosh bowl with roasted mushrooms, grains, greens, and flatbread.",
+    ),
+}
+SEED_MEDIA_BY_CATEGORY = {
+    "fire-grill": "grill-plate",
+    "grain-greens": "mushroom-bowl",
+    "handhelds": "grill-plate",
+    "sides": "mushroom-bowl",
+    "sweet-finish": "mushroom-bowl",
+    "drinks": "mushroom-bowl",
+}
+SEED_MEDIA_BY_DISH = {
+    "harissa-chicken-bowl": "grill-plate",
+    "charred-lamb-kofta": "grill-plate",
+    "sumac-salmon": "grill-plate",
+    "mushroom-shawarma": "mushroom-bowl",
+    "green-tahini-bowl": "mushroom-bowl",
+    "citrus-salad": "mushroom-bowl",
+    "roasted-carrot-grains": "mushroom-bowl",
+    "market-flatbread": "grill-plate",
+    "chicken-shawarma-wrap": "grill-plate",
+    "halloumi-pita": "grill-plate",
+    "smoky-potatoes": "mushroom-bowl",
+    "labneh-dip": "mushroom-bowl",
+    "charred-broccoli": "mushroom-bowl",
+    "olive-oil-cake": "mushroom-bowl",
+    "date-molasses-pudding": "mushroom-bowl",
+    "mint-lemonade": "mushroom-bowl",
+}
 
 
 def seeded_id(key: str) -> UUID:
@@ -57,29 +90,32 @@ def find_or_create(
     return instance
 
 
-def ensure_seed_media(
+def ensure_project_seed_media(
     session: Session,
     media_root: Path,
     key: str,
-    alt_text: str,
-    color: tuple[int, int, int],
 ) -> MediaAsset:
+    filename, alt_text = PROJECT_SEED_MEDIA[key]
+    source_path = PROJECT_SEED_MEDIA_ROOT / filename
+    if not source_path.is_file():
+        raise FileNotFoundError(f"Missing committed Nosh seed media: {source_path}")
+
     media_id = seeded_id(f"media:{key}")
     media = session.get(MediaAsset, media_id)
     if media is not None:
         return media
 
-    payload = create_development_seed_image(color, marker=key.encode("utf-8"))
-    validated_image = validate_image_payload(payload, "image/webp")
+    payload = source_path.read_bytes()
+    validated_image = validate_image_payload(payload, "image/png")
     stored_image = persist_image(
         media_root,
-        f"nosh-{key}-development-placeholder.webp",
+        filename,
         validated_image,
         media_id=media_id,
     )
     media = MediaAsset(
         id=stored_image.id,
-        original_filename=f"nosh-{key}-development-placeholder.webp",
+        original_filename=filename,
         original_path=stored_image.original_path,
         thumbnail_path=stored_image.thumbnail_path,
         mime_type=validated_image.mime_type,
@@ -90,10 +126,8 @@ def ensure_seed_media(
         alt_text=alt_text,
         focal_point_x=50,
         focal_point_y=50,
-        source_description=(
-            "Generated local development placeholder; not restaurant photography."
-        ),
-        credit="Nosh local development seed",
+        source_description="Generated original Nosh demo food image.",
+        credit="Nosh demo seed asset",
         publication_state=PublicationState.PUBLISHED,
     )
     session.add(media)
@@ -183,12 +217,8 @@ def seed_database(session: Session, settings: Settings) -> None:
     ]
     categories: dict[str, Category] = {}
     for index, (slug, name, description) in enumerate(category_specs):
-        media = ensure_seed_media(
-            session,
-            settings.media_root,
-            f"category-{slug}",
-            f"Development placeholder for the {name} category.",
-            ((70 + index * 19) % 256, (92 + index * 29) % 256, (54 + index * 37) % 256),
+        media = ensure_project_seed_media(
+            session, settings.media_root, SEED_MEDIA_BY_CATEGORY[slug]
         )
         category = find_or_create(
             session,
@@ -374,9 +404,8 @@ def seed_database(session: Session, settings: Settings) -> None:
             "Fresh lemon, mint, and sparkling water.",
         ),
     ]
-    colors = [(106, 86, 53), (194, 117, 46), (55, 101, 76), (143, 91, 54)]
     menu_items: dict[str, MenuItem] = {}
-    for index, (
+    for (
         slug,
         category_slug,
         name,
@@ -384,13 +413,9 @@ def seed_database(session: Session, settings: Settings) -> None:
         tags,
         allergen_slugs,
         description,
-    ) in enumerate(dish_specs):
-        media = ensure_seed_media(
-            session,
-            settings.media_root,
-            f"dish-{slug}",
-            f"Development placeholder for {name}.",
-            colors[index % len(colors)],
+    ) in dish_specs:
+        media = ensure_project_seed_media(
+            session, settings.media_root, SEED_MEDIA_BY_DISH[slug]
         )
         item = find_or_create(
             session,
@@ -564,7 +589,7 @@ def seed_database(session: Session, settings: Settings) -> None:
             "Thoughtful plates from one local kitchen.",
             "Explore today’s menu",
             "#menu",
-            "hero",
+            "grill-plate",
             None,
         ),
         (
@@ -574,7 +599,7 @@ def seed_database(session: Session, settings: Settings) -> None:
             "to explore.",
             "View dish",
             "#menu",
-            "dish-harissa-chicken-bowl",
+            "grill-plate",
             "harissa-chicken-bowl",
         ),
         (
@@ -583,7 +608,7 @@ def seed_database(session: Session, settings: Settings) -> None:
             "One fictional kitchen, one clear ordering path.",
             "Meet the kitchen",
             "#kitchen",
-            "kitchen-story",
+            "mushroom-bowl",
             None,
         ),
         (
@@ -592,7 +617,7 @@ def seed_database(session: Session, settings: Settings) -> None:
             "Pickup and simulated delivery start from Market Quarter.",
             "Find the kitchen",
             "#location",
-            "location",
+            "mushroom-bowl",
             None,
         ),
     ]
@@ -605,13 +630,7 @@ def seed_database(session: Session, settings: Settings) -> None:
         media_key,
         item_slug,
     ) in enumerate(home_specs):
-        media = ensure_seed_media(
-            session,
-            settings.media_root,
-            media_key,
-            f"Development placeholder for Nosh {content_key.replace('-', ' ')}.",
-            colors[display_order % len(colors)],
-        )
+        media = ensure_project_seed_media(session, settings.media_root, media_key)
         find_or_create(
             session,
             HomeContent,

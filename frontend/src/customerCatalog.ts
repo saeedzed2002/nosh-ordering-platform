@@ -74,6 +74,40 @@ export type CustomerCatalogSnapshot = {
   location: CustomerLocation | null;
 };
 
+export type CustomerCartLineInput = {
+  client_line_id: string;
+  menu_item_slug: string;
+  quantity: number;
+  option_ids: string[];
+  note: string | null;
+};
+
+export type CustomerCartSelectedOption = {
+  id: string;
+  name: string;
+  option_group_name: string;
+  price_delta_minor: number;
+};
+
+export type CustomerCartQuoteLine = {
+  client_line_id: string;
+  menu_item_slug: string;
+  name: string;
+  media: CustomerMedia | null;
+  quantity: number;
+  note: string | null;
+  selected_options: CustomerCartSelectedOption[];
+  unit_price_minor: number;
+  line_total_minor: number;
+  currency_code: string;
+};
+
+export type CustomerCartQuote = {
+  lines: CustomerCartQuoteLine[];
+  subtotal_minor: number;
+  currency_code: string;
+};
+
 type ResourceState<T> = {
   data: T | null;
   error: string | null;
@@ -87,6 +121,26 @@ async function readCatalogJson<T>(path: string, signal: AbortSignal): Promise<T>
   });
   if (!response.ok) {
     throw new Error(`The local catalog returned ${response.status}.`);
+  }
+  return response.json() as Promise<T>;
+}
+
+async function postCatalogJson<T>(
+  path: string,
+  body: unknown,
+  signal: AbortSignal,
+): Promise<T> {
+  const response = await fetch(`${apiBaseUrl}${path}`, {
+    body: JSON.stringify(body),
+    cache: "no-store",
+    headers: { "Content-Type": "application/json" },
+    method: "POST",
+    signal,
+  });
+  if (!response.ok) {
+    const payload = await response.json().catch(() => null) as { detail?: unknown } | null;
+    const detail = typeof payload?.detail === "string" ? payload.detail : "The kitchen could not validate this cart.";
+    throw new Error(detail);
   }
   return response.json() as Promise<T>;
 }
@@ -113,6 +167,13 @@ export async function readCustomerMenuItem(
     readCatalogJson<CustomerLocation[]>("/api/v1/catalog/locations", signal),
   ]);
   return { item, location: locations[0] ?? null };
+}
+
+export function quoteCustomerCart(
+  lines: CustomerCartLineInput[],
+  signal: AbortSignal,
+): Promise<CustomerCartQuote> {
+  return postCatalogJson<CustomerCartQuote>("/api/v1/catalog/cart/quote", { lines }, signal);
 }
 
 function useResource<T>(

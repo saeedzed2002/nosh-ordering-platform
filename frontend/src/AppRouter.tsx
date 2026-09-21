@@ -9,6 +9,7 @@ import { MenuWorkspacePage } from "./admin/MenuWorkspacePage";
 import { MediaLibraryPage } from "./admin/MediaLibraryPage";
 import { AdminSessionProvider, useAdminSession } from "./admin/session";
 import App from "./App";
+import { CustomerCartProvider } from "./customerCart";
 import { CustomerMenuItemPage, CustomerMenuPage } from "./CustomerMenuPage";
 import { AboutPage, LocationsPage, NotFoundPage } from "./SitePages";
 
@@ -26,8 +27,9 @@ function AdminGuard() {
 export function AppRouter() {
   return (
     <BrowserRouter>
-      <AdminSessionProvider>
-        <Routes>
+      <CustomerCartProvider>
+        <AdminSessionProvider>
+          <Routes>
           <Route path="/" element={<App />} />
           <Route path="/menu" element={<CustomerMenuPage />} />
           <Route path="/menu/:slug" element={<CustomerMenuItemPage />} />
@@ -43,8 +45,9 @@ export function AppRouter() {
             <Route path="/admin/menu/:slug" element={<MenuEditorPage />} />
           </Route>
           <Route path="*" element={<NotFoundPage />} />
-        </Routes>
-      </AdminSessionProvider>
+          </Routes>
+        </AdminSessionProvider>
+      </CustomerCartProvider>
     </BrowserRouter>
   );
 }
