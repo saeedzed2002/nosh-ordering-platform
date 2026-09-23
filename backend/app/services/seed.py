@@ -151,6 +151,7 @@ def seed_database(session: Session, settings: Settings) -> None:
             "NOSH_SEED_ADMIN_PASSWORD is required before running the local seed."
         )
 
+    seeded_password_hash = hash_password(settings.seed_admin_password)
     roles = {
         code: find_or_create(
             session,
@@ -179,10 +180,11 @@ def seed_database(session: Session, settings: Settings) -> None:
             id=seeded_id(f"user:{email}"),
             email=email,
             display_name=display_name,
-            password_hash=hash_password(settings.seed_admin_password),
+            password_hash=seeded_password_hash,
             role_id=roles[role_code].id,
             is_active=True,
         )
+        user.password_hash = seeded_password_hash
         if user.role_id != roles[role_code].id:
             user.role_id = roles[role_code].id
 

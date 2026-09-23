@@ -1,3 +1,4 @@
+from dataclasses import replace
 from datetime import time
 from pathlib import Path
 from uuid import uuid4
@@ -20,6 +21,7 @@ from app.models import (
     RoleCode,
     User,
 )
+from app.services.auth import verify_password
 from app.services.seed import PROJECT_SEED_MEDIA, seed_database, seeded_id
 
 
@@ -68,6 +70,26 @@ def test_seed_is_repeatable_and_creates_the_catalog(seeded_settings) -> None:
             assert media.mime_type == "image/png"
             assert (seeded_settings.media_root / media.original_path).is_file()
             assert (seeded_settings.media_root / media.thumbnail_path).is_file()
+
+
+def test_seed_reapplies_the_configured_demo_password(seeded_settings) -> None:
+    with Session(get_engine(seeded_settings.database_url)) as session:
+        owner = session.scalar(select(User).where(User.email == "owner@nosh.example"))
+        assert owner is not None
+        assert verify_password("test-admin-password", owner.password_hash)
+
+        seed_database(
+            session,
+            replace(seeded_settings, seed_admin_password="replacement-local-password"),
+        )
+
+        refreshed_owner = session.scalar(
+            select(User).where(User.email == "owner@nosh.example")
+        )
+        assert refreshed_owner is not None
+        assert verify_password(
+            "replacement-local-password", refreshed_owner.password_hash
+        )
 
 
 def test_seed_restores_rows_with_location_scoped_ids(seeded_settings) -> None:

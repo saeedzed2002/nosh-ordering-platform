@@ -16,7 +16,8 @@ workflow, the Phase 10 customer-tracker-and-order-lifecycle workflow, and the
 Phase 11 staff-order-desk workflow, the Phase 12 customer-account workflow,
 the Phase 13 eligible-review workflow, the Phase 14 operational
 administration workflow, and the Phase 15 quality, accessibility, and browser
-evidence workflow, and the Phase 16 mobile-ready contract workflow:
+evidence workflow, the Phase 16 mobile-ready contract workflow, and the Phase
+17 reproducible local-demo handoff:
 
 - independent React/Vite and FastAPI applications;
 - a PostgreSQL-backed readiness endpoint;
@@ -86,6 +87,8 @@ evidence workflow, and the Phase 16 mobile-ready contract workflow:
 - Phase 16 freezes the generated `/api/v1` OpenAPI snapshot, generated
   TypeScript client declarations, compatibility policy, ordering invariants,
   design-state contract, and explicit mobile/production boundaries.
+- Phase 17 provides a verified local runbook, repeatable demo identities and
+  data, persistence/reset behavior, and explicit simulated-service limits.
 
 Customer menu discovery, dish customization, the local cart, checkout, order
 tracking, the staff order desk, customer accounts, and eligible reviews are
@@ -105,10 +108,11 @@ implemented and must not be represented as working product flows.
    least `32` bytes and a non-empty `NOSH_SEED_ADMIN_PASSWORD` in `.env`.
    They are required environment configuration, not committed demo values.
 
-2. Start the full local stack.
+2. Start the full local stack and wait for its health checks.
 
    ~~~powershell
-   docker compose up --build
+   docker compose up --build --detach --wait
+   docker compose ps
    ~~~
 
 3. Open the applications.
@@ -117,12 +121,19 @@ implemented and must not be represented as working product flows.
    - API documentation: http://localhost:8000/docs
    - API readiness: http://localhost:8000/api/v1/health
 
-4. In a second terminal, apply the schema and seed the local demo.
+4. In a second terminal, apply migrations and seed or reconcile the local
+   demo. The seed command applies migrations before it writes its data.
 
    ~~~powershell
-   docker compose exec backend uv run alembic upgrade head
    docker compose exec backend uv run python -m app.commands.seed
+   docker compose exec backend uv run alembic current
    ~~~
+
+   The final command should report the current revision as `(head)`. Re-running
+   the seed is safe for the Nosh-owned demo rows and committed food images. It
+   also resets the five seeded demo-account passwords to the current untracked
+   `NOSH_SEED_ADMIN_PASSWORD`; it does not erase orders, customer-created
+   records, uploaded media, or other local work.
 
 To stop the stack, run:
 
@@ -130,9 +141,9 @@ To stop the stack, run:
 docker compose down
 ~~~
 
-Removing the database volume deletes local demo data. Do that only when an
-intentional reset is required. The next migration-and-seed sequence recreates
-the initial products and their two committed demo-food images:
+Removing volumes deletes all local database and media data. Do that only when
+an intentional reset is required. The next migration-and-seed sequence
+recreates the initial products and their two committed demo-food images:
 
 ~~~powershell
 docker compose down --volumes
@@ -153,6 +164,10 @@ uv sync --group dev
 uv run ruff format --check .
 uv run ruff check .
 uv run pytest -q
+
+Set-Location ..
+docker compose config --quiet
+docker compose ps
 ~~~
 
 ## Product boundaries
@@ -160,6 +175,8 @@ uv run pytest -q
 - The initial customer language is English LTR.
 - The initial demo has one fictional location.
 - Payment and fulfillment are simulated; no card data is accepted or stored.
+- No email, SMS, push notification, live courier map, delivery-partner, or
+  payment-provider integration exists in this local demo.
 - A public order reference is not an authorization credential. The public
   tracker excludes private recipient, delivery-address, and instruction
   snapshots while exposing only the restaurant's fictional local-demo contact.
@@ -188,3 +205,5 @@ boundaries, docs/phase-14-operations.md for restaurant operations, and
 docs/phase-15-quality-accessibility.md for browser-test execution and the
 quality/accessibility scope. See docs/phase-16-mobile-contract.md for the
 versioned API, generated client types, and future native-client boundaries.
+See docs/phase-17-demo-handoff.md for the reproducible demo runbook, seeded
+account roles, reset boundary, validation commands, and explicit limitations.
