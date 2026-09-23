@@ -116,6 +116,19 @@ export type CustomerCartQuote = {
   currency_code: string;
 };
 
+export type CustomerPublicReview = {
+  rating: number;
+  body: string;
+  reviewer_name: string;
+  created_at: string;
+};
+
+export type CustomerPublicReviewList = {
+  review_count: number;
+  average_rating: number | null;
+  reviews: CustomerPublicReview[];
+};
+
 type ResourceState<T> = {
   data: T | null;
   error: string | null;
@@ -246,6 +259,16 @@ export function useCustomerMenuItem(slug: string | undefined) {
     [slug],
   );
   return useResource(`customer-menu-item:${slug ?? "missing"}`, readItem);
+}
+
+export function useCustomerPublicReviews(slug: string | undefined) {
+  const readReviews = useCallback(
+    (signal: AbortSignal) => slug
+      ? readCatalogJson<CustomerPublicReviewList>(`/api/v1/catalog/menu-items/${encodeURIComponent(slug)}/reviews`, signal)
+      : Promise.reject(new Error("A dish link is required.")),
+    [slug],
+  );
+  return useResource(`customer-public-reviews:${slug ?? "missing"}`, readReviews);
 }
 
 export function formatCustomerPrice(minor: number, currency = "USD"): string {

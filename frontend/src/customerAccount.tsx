@@ -48,11 +48,24 @@ export type CustomerAccountOrder = {
   currency_code: string;
   total_minor: number;
   lines: Array<{
+    id: string;
     menu_item_slug: string;
     menu_item_name: string;
     quantity: number;
     selected_option_names: string[];
   }>;
+};
+
+export type CustomerReview = {
+  id: string;
+  order_item_id: string;
+  menu_item_slug: string;
+  menu_item_name: string;
+  rating: number;
+  body: string;
+  status: "pending" | "approved" | "rejected" | "hidden";
+  created_at: string;
+  updated_at: string;
 };
 
 export type CustomerReorder = {

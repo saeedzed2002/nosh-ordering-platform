@@ -95,6 +95,13 @@ class OrderStatus(StrEnum):
     NEEDS_CONTACT = "needs_contact"
 
 
+class ReviewStatus(StrEnum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    HIDDEN = "hidden"
+
+
 class TimestampedUUIDMixin:
     id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
     created_at: Mapped[datetime] = mapped_column(
@@ -744,6 +751,48 @@ class OrderItem(TimestampedUUIDMixin, Base):
         JSON, nullable=False, default=list
     )
     order: Mapped[Order] = relationship(back_populates="items")
+    review: Mapped[Review | None] = relationship(
+        back_populates="order_item", uselist=False, cascade="all, delete-orphan"
+    )
+
+
+class Review(TimestampedUUIDMixin, Base):
+    __tablename__ = "reviews"
+    __table_args__ = (
+        CheckConstraint("rating >= 1 AND rating <= 5", name="rating_range"),
+        CheckConstraint(
+            "status IN ('pending', 'approved', 'rejected', 'hidden')",
+            name="status_allowed",
+        ),
+        UniqueConstraint("order_item_id", name="uq_reviews_order_item_id"),
+        Index(
+            "ix_reviews_menu_status_created_at", "menu_item_id", "status", "created_at"
+        ),
+        Index("ix_reviews_status_created_at", "status", "created_at"),
+    )
+
+    customer_id: Mapped[UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    order_item_id: Mapped[UUID] = mapped_column(
+        ForeignKey("order_items.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    menu_item_id: Mapped[UUID] = mapped_column(Uuid, nullable=False, index=True)
+    menu_item_slug: Mapped[str] = mapped_column(String(160), nullable=False)
+    menu_item_name: Mapped[str] = mapped_column(String(160), nullable=False)
+    rating: Mapped[int] = mapped_column(Integer, nullable=False)
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[ReviewStatus] = mapped_column(
+        String(16), nullable=False, default=ReviewStatus.PENDING
+    )
+    internal_reason: Mapped[str | None] = mapped_column(String(500))
+    moderated_by_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), index=True
+    )
+    moderated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    customer: Mapped[User] = relationship(foreign_keys=[customer_id])
+    moderated_by: Mapped[User | None] = relationship(foreign_keys=[moderated_by_id])
+    order_item: Mapped[OrderItem] = relationship(back_populates="review")
 
 
 class OrderStatusEvent(TimestampedUUIDMixin, Base):

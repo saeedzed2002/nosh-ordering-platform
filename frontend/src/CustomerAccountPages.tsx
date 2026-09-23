@@ -9,6 +9,7 @@ import {
   type CustomerAddress,
   type CustomerFavorite,
   type CustomerReorder,
+  type CustomerReview,
   useCustomerAccount,
 } from "./customerAccount";
 import { useCustomerCart } from "./customerCart";
@@ -126,6 +127,19 @@ const blankAddress: AddressForm = {
 
 function AccountSection({ children, title, eyebrow }: { children: ReactNode; title: string; eyebrow: string }) {
   return <section className="customer-account-section"><header><p className="eyebrow">{eyebrow}</p><h2>{title}</h2></header>{children}</section>;
+}
+
+function ReviewManager({ orders, request }: { orders: CustomerAccountOrder[]; request: <T>(path: string, init?: RequestInit) => Promise<T> }) {
+  const [reviews, setReviews] = useState<CustomerReview[]>([]);
+  const [target, setTarget] = useState("");
+  const [rating, setRating] = useState(5);
+  const [body, setBody] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => { void request<CustomerReview[]>("/api/v1/account/reviews").then(setReviews).catch(() => setError("Your review history could not be loaded.")); }, [request]);
+  const choices = orders.filter((order) => order.status === "delivered").flatMap((order) => order.lines).filter((line) => !reviews.some((review) => review.order_item_id === line.id));
+  const submit = async () => { if (!target) return; setError(null); try { const review = await request<CustomerReview>("/api/v1/account/reviews", { method: "POST", body: JSON.stringify({ order_item_id: target, rating, body }) }); setReviews((current) => [review, ...current]); setTarget(""); setBody(""); } catch (requestError) { setError(requestError instanceof Error ? requestError.message : "This review could not be saved."); } };
+  const remove = async (review: CustomerReview) => { try { await request<void>(`/api/v1/account/reviews/${review.id}`, { method: "DELETE" }); setReviews((current) => current.filter((entry) => entry.id !== review.id)); } catch { setError("This review could not be removed."); } };
+  return <AccountSection eyebrow="Your feedback" title="Notes from delivered dishes"><div className="customer-review-manager">{choices.length ? <form onSubmit={(event) => { event.preventDefault(); void submit(); }}><label>Delivered dish<select required value={target} onChange={(event) => setTarget(event.target.value)}><option value="">Choose a dish</option>{choices.map((line) => <option key={line.id} value={line.id}>{line.menu_item_name}</option>)}</select></label><label>Rating<select value={rating} onChange={(event) => setRating(Number(event.target.value))}>{[5,4,3,2,1].map((value) => <option key={value} value={value}>{value} stars</option>)}</select></label><label>Review<textarea required minLength={12} maxLength={1500} value={body} onChange={(event) => setBody(event.target.value)} /></label><Button type="submit">Submit for review</Button></form> : null}{error ? <p className="customer-account-error">{error}</p> : null}{reviews.map((review) => <article key={review.id}><strong>{review.menu_item_name} · {review.rating}/5</strong><span>{review.status}</span><p>{review.body}</p><Button size="compact" variant="quiet" onClick={() => void remove(review)}>Remove</Button></article>)}{!choices.length && !reviews.length ? <p className="customer-account-empty">A review is available only after a dish from your account has been delivered.</p> : null}</div></AccountSection>;
 }
 
 export function CustomerAccountPage() {
@@ -261,6 +275,7 @@ export function CustomerAccountPage() {
           </div>
           <div className="customer-account-secondary">
             <AccountSection eyebrow="Favorites" title="Dishes worth keeping close"><div className="customer-favorites-list">{favorites.length ? favorites.map((favorite) => <article key={favorite.id}><Link to={`/menu/${favorite.slug}`}>{favorite.media ? <img alt={favorite.media.alt_text} src={customerMediaUrl(favorite.media) ?? undefined} /> : <Heart aria-hidden="true" />}<span><strong>{favorite.name}</strong><small>{formatCustomerPrice(favorite.final_price_minor, favorite.currency_code)}{favorite.is_available ? " · Available now" : " · Not currently available"}</small></span></Link><Button aria-label={`Remove ${favorite.name} from favorites`} size="compact" variant="quiet" onClick={() => void removeFavorite(favorite)}>Remove</Button></article>) : <p className="customer-account-empty">Save a dish from its detail page to find it here.</p>}</div></AccountSection>
+            <ReviewManager orders={orders} request={request} />
             <AccountSection eyebrow="Order history" title="Bring an order back to edit"><div className="customer-history-list">{orders.length ? orders.map((order) => <article key={order.public_reference}><header><span>{order.status.replaceAll("_", " ")}</span><time dateTime={order.created_at}>{formatAccountDate(order.created_at)}</time></header><h3>{order.lines.map((line) => `${line.quantity} × ${line.menu_item_name}`).join(", ")}</h3><p>{order.location_name} · {order.fulfillment_method}</p><strong>{formatCustomerPrice(order.total_minor, order.currency_code)}</strong><footer><Link to={`/orders/${order.public_reference}`}>Receipt</Link><Button loading={reorderingReference === order.public_reference} size="compact" onClick={() => void reorder(order.public_reference)}><RotateCcw aria-hidden="true" /> Reorder</Button></footer></article>) : <p className="customer-account-empty">Completed account orders will appear here after checkout.</p>}</div></AccountSection>
           </div>
         </div>}

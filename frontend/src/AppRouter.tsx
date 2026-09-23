@@ -8,6 +8,7 @@ import { MenuEditorPage } from "./admin/MenuEditorPage";
 import { MenuWorkspacePage } from "./admin/MenuWorkspacePage";
 import { MediaLibraryPage } from "./admin/MediaLibraryPage";
 import { OrderDeskPage } from "./admin/OrderDeskPage";
+import { ReviewDeskPage } from "./admin/ReviewDeskPage";
 import { AdminSessionProvider, useAdminSession } from "./admin/session";
 import App from "./App";
 import { CustomerCartProvider } from "./customerCart";
@@ -61,6 +62,7 @@ export function AppRouter() {
             <Route path="/admin/menu/new" element={<MenuEditorPage />} />
             <Route path="/admin/menu/:slug" element={<MenuEditorPage />} />
             <Route path="/admin/orders" element={<OrderDeskPage />} />
+            <Route path="/admin/reviews" element={<ReviewDeskPage />} />
           </Route>
           <Route path="*" element={<NotFoundPage />} />
             </Routes>

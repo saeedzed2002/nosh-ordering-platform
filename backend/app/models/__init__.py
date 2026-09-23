@@ -29,6 +29,8 @@ from app.models.domain import (
     Promotion,
     PromotionKind,
     PublicationState,
+    Review,
+    ReviewStatus,
     Role,
     RoleCode,
     User,
@@ -67,5 +69,7 @@ __all__ = [
     "PromotionKind",
     "Role",
     "RoleCode",
+    "Review",
+    "ReviewStatus",
     "User",
 ]

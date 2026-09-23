@@ -30,6 +30,7 @@ import {
   type CustomerMedia,
   useCustomerCatalog,
   useCustomerMenuItem,
+  useCustomerPublicReviews,
 } from "./customerCatalog";
 import { customerCartLineId, previewCustomerPrice, selectedOptionIds, selectionIssues, type CustomerSelections } from "./customerOrder";
 
@@ -459,6 +460,18 @@ function CustomerDishOrderPanel({ item }: { item: CustomerMenuItem }) {
   );
 }
 
+function CustomerDishReviews({ slug }: { slug: string }) {
+  const resource = useCustomerPublicReviews(slug);
+  if (resource.status === "loading") {
+    return <section className="customer-dish-reviews"><p>Loading verified customer feedback…</p></section>;
+  }
+  if (resource.status === "error" || !resource.data) {
+    return null;
+  }
+  const { average_rating: averageRating, review_count: reviewCount, reviews } = resource.data;
+  return <section className="customer-dish-reviews" aria-labelledby="dish-reviews-title"><header><p className="eyebrow">Verified orders</p><h2 id="dish-reviews-title">Customer notes from delivered dishes.</h2><p>{reviewCount ? `${averageRating?.toFixed(1)} out of 5 from ${reviewCount} approved review${reviewCount === 1 ? "" : "s"}.` : "Reviews appear here only after an ordered dish is delivered and the kitchen team approves the feedback."}</p></header>{reviews.length ? <div>{reviews.map((review) => <article key={`${review.reviewer_name}-${review.created_at}`}><strong>{"★".repeat(review.rating)}<span>{review.rating} / 5</span></strong><p>{review.body}</p><footer>{review.reviewer_name}<time dateTime={review.created_at}>{new Intl.DateTimeFormat("en-US", { month: "short", year: "numeric" }).format(new Date(review.created_at))}</time></footer></article>)}</div> : null}</section>;
+}
+
 export function CustomerMenuItemPage() {
   const { slug } = useParams();
   const itemResource = useCustomerMenuItem(slug);
@@ -508,6 +521,7 @@ export function CustomerMenuItemPage() {
           </section>
 
           <CustomerDishOrderPanel key={item.id} item={item} />
+          <CustomerDishReviews slug={item.slug} />
           <RelatedDishes items={relatedItems} preparationMinutes={location?.preparation_minutes ?? null} />
         </> : null}
       </main>

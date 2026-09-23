@@ -6658,6 +6658,42 @@ select:focus-visible {
   background: var(--surface-raised);
 }
 
+.customer-review-manager,
+.customer-review-manager form,
+.customer-review-manager article {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.customer-review-manager form,
+.customer-review-manager article {
+  padding: 1rem;
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-raised);
+}
+
+.customer-review-manager label {
+  display: grid;
+  gap: 0.4rem;
+  color: var(--surface-inverse);
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.customer-review-manager select,
+.customer-review-manager textarea {
+  min-height: 2.7rem;
+  border: 1px solid var(--border-strong);
+  padding: 0.55rem 0.65rem;
+  background: var(--surface-canvas);
+  color: var(--text-strong);
+  font: inherit;
+}
+
+.customer-review-manager textarea { min-height: 5rem; resize: vertical; }
+.customer-review-manager article span { color: var(--action-primary-hover); font-size: 0.76rem; font-weight: 850; text-transform: uppercase; }
+.customer-review-manager article p { margin: 0; color: var(--text-muted); line-height: 1.45; }
+
 .customer-address-card.default {
   border-left: 4px solid #4c9867;
 }
@@ -6849,11 +6885,123 @@ select:focus-visible {
   font-weight: 800;
 }
 
+.customer-dish-reviews {
+  padding: clamp(2.5rem, 7vw, 6rem) clamp(1.25rem, 8vw, 9rem);
+  background: var(--surface-canvas);
+}
+
+.customer-dish-reviews > header {
+  max-width: 42rem;
+}
+
+.customer-dish-reviews h2 {
+  margin: 0.7rem 0 0;
+  color: var(--surface-inverse);
+  font-family: var(--font-display);
+  font-size: clamp(2.25rem, 4vw, 4rem);
+  font-weight: 570;
+  letter-spacing: -0.06em;
+  line-height: 0.9;
+}
+
+.customer-dish-reviews header > p:not(.eyebrow) {
+  margin: 1rem 0 0;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+
+.customer-dish-reviews > div {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.customer-dish-reviews article {
+  display: grid;
+  gap: 0.8rem;
+  padding: 1.2rem;
+  border-top: 3px solid var(--action-primary);
+  background: var(--surface-muted);
+}
+
+.customer-dish-reviews article > strong {
+  color: var(--action-primary-hover);
+  letter-spacing: 0.1em;
+}
+
+.customer-dish-reviews article > strong span {
+  margin-left: 0.5rem;
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  letter-spacing: 0;
+}
+
+.customer-dish-reviews article p {
+  margin: 0;
+  color: var(--text-strong);
+  line-height: 1.5;
+}
+
+.customer-dish-reviews footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.8rem;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 750;
+}
+
+.admin-review-desk {
+  display: grid;
+  gap: 1.5rem;
+  padding: clamp(1.5rem, 4vw, 3rem);
+}
+
+.admin-review-desk > header,
+.admin-review-desk > header > div,
+.admin-review-list,
+.admin-review-list article,
+.admin-review-list footer,
+.admin-review-list footer > div {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.admin-review-desk > header {
+  grid-template-columns: minmax(0, 1fr) minmax(10rem, 14rem);
+  align-items: end;
+}
+
+.admin-review-desk h1,
+.admin-review-list h2 {
+  margin: 0;
+  color: var(--surface-inverse);
+  font-family: var(--font-display);
+  font-weight: 570;
+  letter-spacing: -0.05em;
+}
+
+.admin-review-desk h1 { font-size: clamp(2.4rem, 4vw, 4.2rem); line-height: 0.9; }
+.admin-review-list h2 { font-size: 1.45rem; }
+.admin-review-desk p, .admin-review-list p { margin: 0; color: var(--text-muted); line-height: 1.5; }
+.admin-review-desk label { display: grid; gap: 0.4rem; color: var(--text-muted); font-weight: 800; }
+.admin-review-desk select { min-height: 2.8rem; border: 1px solid var(--border-strong); padding: 0.5rem; background: var(--surface-raised); font: inherit; }
+.admin-review-list article { padding: 1.2rem; border: 1px solid var(--border-subtle); background: var(--surface-raised); }
+.admin-review-list article > header, .admin-review-list footer { display: flex; justify-content: space-between; gap: 1rem; align-items: start; }
+.admin-review-list article > header span { border-radius: 999px; padding: 0.25rem 0.5rem; background: var(--surface-muted); color: var(--action-primary-hover); font-size: 0.75rem; font-weight: 850; text-transform: uppercase; }
+.admin-review-list time, .admin-review-list small { color: var(--text-muted); font-size: 0.82rem; }
+.admin-review-list footer > div:last-child { display: flex; flex-wrap: wrap; justify-content: end; gap: 0.5rem; }
+
 @media (max-width: 780px) {
   .customer-auth-layout,
   .customer-account-grid {
     grid-template-columns: 1fr;
   }
+
+  .customer-dish-reviews > div,
+  .admin-review-desk > header { grid-template-columns: 1fr; }
 
   .customer-auth-layout {
     min-height: auto;

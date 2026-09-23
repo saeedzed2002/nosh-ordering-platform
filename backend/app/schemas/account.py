@@ -91,6 +91,7 @@ class CustomerFavoriteResponse(BaseModel):
 
 
 class CustomerOrderHistoryLineResponse(BaseModel):
+    id: UUID
     menu_item_slug: str
     menu_item_name: str
     quantity: int

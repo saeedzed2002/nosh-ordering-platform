@@ -338,6 +338,7 @@ def serialize_account_order(order: Order) -> CustomerOrderHistoryResponse:
         total_minor=order.total_minor,
         lines=[
             CustomerOrderHistoryLineResponse(
+                id=item.id,
                 menu_item_slug=item.menu_item_slug,
                 menu_item_name=item.menu_item_name,
                 quantity=item.quantity,

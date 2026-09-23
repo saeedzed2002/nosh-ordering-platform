@@ -11,6 +11,9 @@ from app.routers.catalog import router as catalog_router
 from app.routers.health import router as health_router
 from app.routers.media import router as media_router
 from app.routers.orders import router as orders_router
+from app.routers.reviews import admin_router as admin_reviews_router
+from app.routers.reviews import customer_router as customer_reviews_router
+from app.routers.reviews import public_router as public_reviews_router
 
 settings = get_settings()
 
@@ -34,9 +37,12 @@ app.add_middleware(
 app.include_router(health_router)
 app.include_router(auth_router)
 app.include_router(account_router)
+app.include_router(customer_reviews_router)
 app.include_router(admin_home_router)
 app.include_router(admin_menu_router)
 app.include_router(admin_orders_router)
+app.include_router(admin_reviews_router)
 app.include_router(catalog_router)
+app.include_router(public_reviews_router)
 app.include_router(media_router)
 app.include_router(orders_router)
