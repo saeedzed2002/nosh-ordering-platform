@@ -19,6 +19,7 @@ from app.models import (
 )
 from app.schemas.reviews import (
     AdminReviewResponse,
+    CustomerReviewEligibilityResponse,
     CustomerReviewResponse,
     CustomerReviewUpdateRequest,
     CustomerReviewWriteRequest,
@@ -80,6 +81,27 @@ def list_customer_reviews(
     return [serialize_customer_review(review) for review in reviews]
 
 
+@customer_router.get(
+    "/eligible-menu-items", response_model=CustomerReviewEligibilityResponse
+)
+def list_eligible_review_menu_items(
+    session: SessionDep, current_user: CustomerCurrentUserDep
+) -> CustomerReviewEligibilityResponse:
+    menu_item_slugs = session.scalars(
+        select(OrderItem.menu_item_slug)
+        .join(OrderItem.order)
+        .outerjoin(Review, Review.order_item_id == OrderItem.id)
+        .where(
+            Order.customer_id == current_user.id,
+            Order.status.in_((OrderStatus.DELIVERED, OrderStatus.HANDED_TO_CUSTOMER)),
+            Review.id.is_(None),
+        )
+        .distinct()
+        .order_by(OrderItem.menu_item_slug)
+    ).all()
+    return CustomerReviewEligibilityResponse(menu_item_slugs=menu_item_slugs)
+
+
 @customer_router.post(
     "", response_model=CustomerReviewResponse, status_code=status.HTTP_201_CREATED
 )
@@ -94,7 +116,7 @@ def create_customer_review(
         .where(
             OrderItem.id == request.order_item_id,
             Order.customer_id == current_user.id,
-            Order.status == OrderStatus.DELIVERED,
+            Order.status.in_((OrderStatus.DELIVERED, OrderStatus.HANDED_TO_CUSTOMER)),
         )
     )
     if item is None:

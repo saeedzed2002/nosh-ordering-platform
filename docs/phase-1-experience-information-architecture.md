@@ -62,7 +62,7 @@ in the product UI.
 | Confirmation | Review receipt or continue tracking. | `/orders/:publicReference` shows ordered-item snapshots, fulfilment instructions, estimated time, and an immutable timeline. | An unknown reference provides a not-found state. Access rules never reveal another customer’s private details. |
 | Tracking | Refresh or wait for an update. | Light polling refreshes order state without claiming live GPS. Pickup and delivery labels follow the status model in the roadmap. | A temporary refresh failure preserves the last confirmed state, states that it may be out of date, and exposes **Try again**. |
 | Account (Phase 12) | Sign in, open history, save an address, add a favorite, or reorder. | `/account/*` actions affect only the signed-in customer. Reorder returns a newly validated cart, never a copied historic total. | Authentication expiry returns to sign-in while preserving the intended safe destination. Ownership failures never disclose whether another customer’s object exists. |
-| Delivered order (Phase 13) | Write one review for an eligible ordered dish. | `/account/reviews` accepts one review per delivered order item and submits it to moderation. | Ineligible or duplicate reviews explain why and do not create a public review. |
+| Completed order (Phase 13) | Select **Add a review** below an eligible menu card or dish page, then write one review. | The authenticated customer sees the action only for their completed, unreviewed dish. The `/account#reviews` section accepts one review per completed order item: `delivered` for delivery or `handed_to_customer` for pickup. It submits feedback to moderation. | Guests, other customers, ineligible items, and duplicate reviews see no authoring action; server checks still prevent invalid writes. |
 
 ## Order-language and transition contract
 
@@ -241,7 +241,7 @@ operations.
 | Home content | One hero, one featured-dish placement, one story block, one location callout, and at most one active demo promotion placement. |
 | Users and roles | Owner, manager, kitchen, and two customer identities using non-secret deterministic seed identifiers. Local credentials are introduced only with the authentication implementation and never committed as a production secret. |
 | Orders | A compact, clearly fictional distribution of pickup and delivery orders across submitted, active, ready, completed, declined, cancelled, and needs-contact states; each stores immutable snapshots and timeline events. |
-| Reviews and promotions | At least one delivered-order item eligible for a future review test, plus approved, pending, and hidden review states. One backend-validated demo promotion exercises valid, expired, minimum-order, and usage-limit paths. |
+| Reviews and promotions | At least one completed-order item eligible for a future review test, plus approved, pending, and hidden review states. One backend-validated demo promotion exercises valid, expired, minimum-order, and usage-limit paths. |
 
 ## Phase 1 acceptance trace
 

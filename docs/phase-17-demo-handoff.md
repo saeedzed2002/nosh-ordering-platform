@@ -63,7 +63,7 @@ data and remain until an intentional volume reset.
    open the redacted receipt/tracker.
 2. A signed-in customer can manage profile data, addresses and favorites, view
    owned history, build a newly validated reorder draft, and submit an eligible
-   review for a delivered item.
+   review for a completed item.
 3. A manager can edit and publish home/menu content, process the protected
    order queues, moderate reviews, manage promotions and restaurant controls,
    and inspect local reports. The owner additionally has customer-state and

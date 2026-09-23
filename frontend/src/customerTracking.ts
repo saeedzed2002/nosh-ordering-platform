@@ -99,3 +99,7 @@ export function trackingStepState(
 export function isTrackingIssue(status: string): boolean {
   return status === "declined" || status === "cancelled" || status === "needs_contact";
 }
+
+export function isReviewEligibleOrderStatus(status: string): boolean {
+  return status === "delivered" || status === "handed_to_customer";
+}

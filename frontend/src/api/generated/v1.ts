@@ -162,6 +162,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/account/reviews/eligible-menu-items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Eligible Review Menu Items */
+        get: operations["list_eligible_review_menu_items_api_v1_account_reviews_eligible_menu_items_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/account/reviews/{review_id}": {
         parameters: {
             query?: never;
@@ -1908,6 +1925,11 @@ export interface components {
             location_slug: string;
             quote: components["schemas"]["CartQuoteResponse"];
         };
+        /** CustomerReviewEligibilityResponse */
+        CustomerReviewEligibilityResponse: {
+            /** Menu Item Slugs */
+            menu_item_slugs: string[];
+        };
         /** CustomerReviewResponse */
         CustomerReviewResponse: {
             /** Body */
@@ -3188,6 +3210,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_eligible_review_menu_items_api_v1_account_reviews_eligible_menu_items_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerReviewEligibilityResponse"];
                 };
             };
         };

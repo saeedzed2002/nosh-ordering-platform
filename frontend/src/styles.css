@@ -4895,6 +4895,24 @@ select:focus-visible {
   height: 1rem;
 }
 
+.customer-menu-card-review {
+  display: inline-flex;
+  align-items: center;
+  align-self: start;
+  margin-top: 0.15rem;
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 0.65rem;
+  color: var(--action-primary-hover);
+  font-size: 0.85rem;
+  font-weight: 850;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.25rem;
+}
+
+.customer-menu-card-review:hover {
+  color: var(--surface-inverse);
+}
+
 .customer-menu-skeleton {
   min-height: 23rem;
   overflow: hidden;
@@ -6110,6 +6128,47 @@ select:focus-visible {
   border-left: 2px solid var(--action-primary-hover);
 }
 
+.customer-tracker-review {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-top: 1.35rem;
+  padding: 1.35rem 1.5rem;
+  border: 1px solid color-mix(in srgb, var(--action-primary) 48%, var(--border-subtle));
+  background: color-mix(in srgb, var(--action-primary) 7%, var(--surface-raised));
+}
+
+.customer-tracker-review > div {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.customer-tracker-review .eyebrow,
+.customer-tracker-review h2,
+.customer-tracker-review p {
+  margin: 0;
+}
+
+.customer-tracker-review h2 {
+  color: var(--surface-inverse);
+  font-family: var(--font-display);
+  font-size: clamp(1.65rem, 3vw, 2.25rem);
+  font-weight: 570;
+  letter-spacing: -0.04em;
+  line-height: 0.98;
+}
+
+.customer-tracker-review p:not(.eyebrow) {
+  max-width: 47rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.customer-tracker-review .nosh-button {
+  flex: 0 0 auto;
+}
+
 .customer-tracker-progress {
   margin-top: 1.35rem;
   padding: 1.25rem 1.5rem 1.5rem;
@@ -6430,6 +6489,11 @@ select:focus-visible {
     flex-direction: column;
   }
 
+  .customer-tracker-review {
+    align-items: start;
+    flex-direction: column;
+  }
+
   .customer-tracker-status-actions {
     justify-items: start;
   }
@@ -6615,6 +6679,10 @@ select:focus-visible {
 
 .customer-account-section > header {
   margin-bottom: 1.25rem;
+}
+
+.customer-account-section#reviews {
+  scroll-margin-top: 7rem;
 }
 
 .customer-account-section h2 {
@@ -6908,6 +6976,22 @@ select:focus-visible {
   margin: 1rem 0 0;
   color: var(--text-muted);
   line-height: 1.55;
+}
+
+.customer-dish-review-action {
+  display: inline-flex;
+  margin-top: 1.25rem;
+  border: 1px solid var(--surface-inverse);
+  padding: 0.65rem 0.9rem;
+  color: var(--surface-inverse);
+  font-weight: 850;
+  text-decoration: none;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.customer-dish-review-action:hover {
+  background: var(--surface-inverse);
+  color: var(--text-inverse);
 }
 
 .customer-dish-reviews > div {

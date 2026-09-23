@@ -14,9 +14,10 @@ import {
 } from "./customerAccount";
 import { useCustomerCart } from "./customerCart";
 import { customerMediaUrl, formatCustomerPrice } from "./customerCatalog";
+import { isReviewEligibleOrderStatus } from "./customerTracking";
 import { CustomerSiteFooter, CustomerSiteHeader } from "./CustomerMenuPage";
 
-type AccountDestination = { pathname?: unknown; search?: unknown };
+type AccountDestination = { hash?: unknown; pathname?: unknown; search?: unknown };
 
 function safeDestination(value: unknown): string {
   const candidate = value as AccountDestination | null;
@@ -25,7 +26,9 @@ function safeDestination(value: unknown): string {
     && candidate.pathname.startsWith("/")
     && !candidate.pathname.startsWith("//")
   ) {
-    return candidate.pathname + (typeof candidate.search === "string" ? candidate.search : "");
+    return candidate.pathname
+      + (typeof candidate.search === "string" ? candidate.search : "")
+      + (typeof candidate.hash === "string" && candidate.hash.startsWith("#") ? candidate.hash : "");
   }
   return "/account";
 }
@@ -125,8 +128,8 @@ const blankAddress: AddressForm = {
   is_default: false,
 };
 
-function AccountSection({ children, title, eyebrow }: { children: ReactNode; title: string; eyebrow: string }) {
-  return <section className="customer-account-section"><header><p className="eyebrow">{eyebrow}</p><h2>{title}</h2></header>{children}</section>;
+function AccountSection({ children, id, title, eyebrow }: { children: ReactNode; id?: string; title: string; eyebrow: string }) {
+  return <section className="customer-account-section" id={id}><header><p className="eyebrow">{eyebrow}</p><h2>{title}</h2></header>{children}</section>;
 }
 
 function ReviewManager({ orders, request }: { orders: CustomerAccountOrder[]; request: <T>(path: string, init?: RequestInit) => Promise<T> }) {
@@ -136,10 +139,10 @@ function ReviewManager({ orders, request }: { orders: CustomerAccountOrder[]; re
   const [body, setBody] = useState("");
   const [error, setError] = useState<string | null>(null);
   useEffect(() => { void request<CustomerReview[]>("/api/v1/account/reviews").then(setReviews).catch(() => setError("Your review history could not be loaded.")); }, [request]);
-  const choices = orders.filter((order) => order.status === "delivered").flatMap((order) => order.lines).filter((line) => !reviews.some((review) => review.order_item_id === line.id));
+  const choices = orders.filter((order) => isReviewEligibleOrderStatus(order.status)).flatMap((order) => order.lines).filter((line) => !reviews.some((review) => review.order_item_id === line.id));
   const submit = async () => { if (!target) return; setError(null); try { const review = await request<CustomerReview>("/api/v1/account/reviews", { method: "POST", body: JSON.stringify({ order_item_id: target, rating, body }) }); setReviews((current) => [review, ...current]); setTarget(""); setBody(""); } catch (requestError) { setError(requestError instanceof Error ? requestError.message : "This review could not be saved."); } };
   const remove = async (review: CustomerReview) => { try { await request<void>(`/api/v1/account/reviews/${review.id}`, { method: "DELETE" }); setReviews((current) => current.filter((entry) => entry.id !== review.id)); } catch { setError("This review could not be removed."); } };
-  return <AccountSection eyebrow="Your feedback" title="Notes from delivered dishes"><div className="customer-review-manager">{choices.length ? <form onSubmit={(event) => { event.preventDefault(); void submit(); }}><label>Delivered dish<select required value={target} onChange={(event) => setTarget(event.target.value)}><option value="">Choose a dish</option>{choices.map((line) => <option key={line.id} value={line.id}>{line.menu_item_name}</option>)}</select></label><label>Rating<select value={rating} onChange={(event) => setRating(Number(event.target.value))}>{[5,4,3,2,1].map((value) => <option key={value} value={value}>{value} stars</option>)}</select></label><label>Review<textarea required minLength={12} maxLength={1500} value={body} onChange={(event) => setBody(event.target.value)} /></label><Button type="submit">Submit for review</Button></form> : null}{error ? <p className="customer-account-error">{error}</p> : null}{reviews.map((review) => <article key={review.id}><strong>{review.menu_item_name} · {review.rating}/5</strong><span>{review.status}</span><p>{review.body}</p><Button size="compact" variant="quiet" onClick={() => void remove(review)}>Remove</Button></article>)}{!choices.length && !reviews.length ? <p className="customer-account-empty">A review is available only after a dish from your account has been delivered.</p> : null}</div></AccountSection>;
+  return <AccountSection eyebrow="Your feedback" id="reviews" title="Notes from completed dishes"><div className="customer-review-manager">{choices.length ? <form onSubmit={(event) => { event.preventDefault(); void submit(); }}><label>Completed dish<select required value={target} onChange={(event) => setTarget(event.target.value)}><option value="">Choose a dish</option>{choices.map((line) => <option key={line.id} value={line.id}>{line.menu_item_name}</option>)}</select></label><label>Rating<select value={rating} onChange={(event) => setRating(Number(event.target.value))}>{[5,4,3,2,1].map((value) => <option key={value} value={value}>{value} stars</option>)}</select></label><label>Review<textarea required minLength={12} maxLength={1500} value={body} onChange={(event) => setBody(event.target.value)} /></label><Button type="submit">Submit for review</Button></form> : null}{error ? <p className="customer-account-error">{error}</p> : null}{reviews.map((review) => <article key={review.id}><strong>{review.menu_item_name} · {review.rating}/5</strong><span>{review.status}</span><p>{review.body}</p><Button size="compact" variant="quiet" onClick={() => void remove(review)}>Remove</Button></article>)}{!choices.length && !reviews.length ? <p className="customer-account-empty">A review is available only after a dish from your account has been collected or delivered.</p> : null}</div></AccountSection>;
 }
 
 export function CustomerAccountPage() {

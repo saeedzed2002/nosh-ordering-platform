@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  isReviewEligibleOrderStatus,
   isTrackingIssue,
   trackingStatusDescription,
   trackingStepState,
@@ -25,5 +26,12 @@ describe("customer order tracking", () => {
     expect(isTrackingIssue("needs_contact")).toBe(true);
     expect(isTrackingIssue("preparing")).toBe(false);
     expect(trackingStatusDescription("out_for_delivery")).toContain("does not show a live courier map");
+  });
+
+  it("allows feedback only after either fulfillment path is complete", () => {
+    expect(isReviewEligibleOrderStatus("handed_to_customer")).toBe(true);
+    expect(isReviewEligibleOrderStatus("delivered")).toBe(true);
+    expect(isReviewEligibleOrderStatus("ready_for_pickup")).toBe(false);
+    expect(isReviewEligibleOrderStatus("out_for_delivery")).toBe(false);
   });
 });

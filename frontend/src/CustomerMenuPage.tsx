@@ -20,7 +20,7 @@ import { Link, useLocation, useNavigate, useParams, useSearchParams } from "reac
 import { Button } from "./components/ui/Button";
 import { QuantityStepper } from "./components/ui/QuantityStepper";
 import { CustomerCartDrawer, useCustomerCart } from "./customerCart";
-import { useCustomerAccount } from "./customerAccount";
+import { useCustomerAccount, useCustomerReviewEligibility } from "./customerAccount";
 import {
   availabilityLabel,
   customerMediaUrl,
@@ -129,9 +129,11 @@ function CustomerImage({
 }
 
 export function CustomerMenuCard({
+  canReview = false,
   item,
   preparationMinutes,
 }: {
+  canReview?: boolean;
   item: CustomerMenuItem;
   preparationMinutes: number | null;
 }) {
@@ -156,6 +158,7 @@ export function CustomerMenuCard({
         <Link className="customer-menu-card-link" to={customerMenuPath(item.slug)}>
           {item.availability === "available" ? "View dish" : "View availability"} <ChevronRight aria-hidden="true" />
         </Link>
+        {canReview ? <Link className="customer-menu-card-review" to="/account#reviews">Add a review</Link> : null}
       </div>
     </article>
   );
@@ -232,6 +235,7 @@ function filterItems(
 
 export function CustomerMenuPage() {
   const { data: snapshot, retry, status } = useCustomerCatalog();
+  const eligibleReviewMenuItemSlugs = useCustomerReviewEligibility();
   const [searchParams, setSearchParams] = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const query = searchParams.get("q") ?? "";
@@ -310,7 +314,7 @@ export function CustomerMenuPage() {
                 <div><p className="eyebrow">Kitchen board</p><h2>{visibleItems.length} {visibleItems.length === 1 ? "dish" : "dishes"}</h2></div>
                 <label>Sort menu<select value={sort} onChange={(event) => updateParameters({ sort: event.target.value === "curated" ? null : event.target.value })}>{(Object.keys(menuSortLabels) as MenuSort[]).map((option) => <option key={option} value={option}>{menuSortLabels[option]}</option>)}</select></label>
               </header>
-              {visibleItems.length ? <div className="customer-menu-grid">{visibleItems.map((item) => <CustomerMenuCard key={item.id} item={item} preparationMinutes={preparationMinutes} />)}</div> : <section className="customer-menu-empty"><Search aria-hidden="true" /><h2>Nothing matches those choices.</h2><p>Try clearing a dietary, allergen, or availability filter to see more of today’s menu.</p><Button variant="secondary" onClick={() => setSearchParams({}, { replace: true })}>Clear filters</Button></section>}
+              {visibleItems.length ? <div className="customer-menu-grid">{visibleItems.map((item) => <CustomerMenuCard canReview={eligibleReviewMenuItemSlugs.has(item.slug)} key={item.id} item={item} preparationMinutes={preparationMinutes} />)}</div> : <section className="customer-menu-empty"><Search aria-hidden="true" /><h2>Nothing matches those choices.</h2><p>Try clearing a dietary, allergen, or availability filter to see more of today’s menu.</p><Button variant="secondary" onClick={() => setSearchParams({}, { replace: true })}>Clear filters</Button></section>}
             </section>
           </section>
         ) : null}
@@ -320,11 +324,11 @@ export function CustomerMenuPage() {
   );
 }
 
-function RelatedDishes({ items, preparationMinutes }: { items: CustomerMenuItem[]; preparationMinutes: number | null }) {
+function RelatedDishes({ items, preparationMinutes, reviewEligibleSlugs }: { items: CustomerMenuItem[]; preparationMinutes: number | null; reviewEligibleSlugs: ReadonlySet<string> }) {
   if (!items.length) {
     return null;
   }
-  return <section className="customer-related-dishes" aria-labelledby="related-dishes-title"><div className="customer-section-heading"><p className="eyebrow">Keep the table moving</p><h2 id="related-dishes-title">You might also like</h2></div><div className="customer-menu-grid">{items.map((item) => <CustomerMenuCard key={item.id} item={item} preparationMinutes={preparationMinutes} />)}</div></section>;
+  return <section className="customer-related-dishes" aria-labelledby="related-dishes-title"><div className="customer-section-heading"><p className="eyebrow">Keep the table moving</p><h2 id="related-dishes-title">You might also like</h2></div><div className="customer-menu-grid">{items.map((item) => <CustomerMenuCard canReview={reviewEligibleSlugs.has(item.slug)} key={item.id} item={item} preparationMinutes={preparationMinutes} />)}</div></section>;
 }
 
 function CustomerDishOrderPanel({ item }: { item: CustomerMenuItem }) {
@@ -460,7 +464,7 @@ function CustomerDishOrderPanel({ item }: { item: CustomerMenuItem }) {
   );
 }
 
-function CustomerDishReviews({ slug }: { slug: string }) {
+function CustomerDishReviews({ canReview, slug }: { canReview: boolean; slug: string }) {
   const resource = useCustomerPublicReviews(slug);
   if (resource.status === "loading") {
     return <section className="customer-dish-reviews"><p>Loading verified customer feedback…</p></section>;
@@ -469,13 +473,14 @@ function CustomerDishReviews({ slug }: { slug: string }) {
     return null;
   }
   const { average_rating: averageRating, review_count: reviewCount, reviews } = resource.data;
-  return <section className="customer-dish-reviews" aria-labelledby="dish-reviews-title"><header><p className="eyebrow">Verified orders</p><h2 id="dish-reviews-title">Customer notes from delivered dishes.</h2><p>{reviewCount ? `${averageRating?.toFixed(1)} out of 5 from ${reviewCount} approved review${reviewCount === 1 ? "" : "s"}.` : "Reviews appear here only after an ordered dish is delivered and the kitchen team approves the feedback."}</p></header>{reviews.length ? <div>{reviews.map((review) => <article key={`${review.reviewer_name}-${review.created_at}`}><strong>{"★".repeat(review.rating)}<span>{review.rating} / 5</span></strong><p>{review.body}</p><footer>{review.reviewer_name}<time dateTime={review.created_at}>{new Intl.DateTimeFormat("en-US", { month: "short", year: "numeric" }).format(new Date(review.created_at))}</time></footer></article>)}</div> : null}</section>;
+  return <section className="customer-dish-reviews" aria-labelledby="dish-reviews-title"><header><p className="eyebrow">Verified orders</p><h2 id="dish-reviews-title">Customer notes from completed dishes.</h2><p>{reviewCount ? `${averageRating?.toFixed(1)} out of 5 from ${reviewCount} approved review${reviewCount === 1 ? "" : "s"}.` : "Reviews appear here only after an ordered dish is completed and the kitchen team approves the feedback."}</p>{canReview ? <Link className="customer-dish-review-action" to="/account#reviews">Add a review</Link> : null}</header>{reviews.length ? <div>{reviews.map((review) => <article key={`${review.reviewer_name}-${review.created_at}`}><strong>{"★".repeat(review.rating)}<span>{review.rating} / 5</span></strong><p>{review.body}</p><footer>{review.reviewer_name}<time dateTime={review.created_at}>{new Intl.DateTimeFormat("en-US", { month: "short", year: "numeric" }).format(new Date(review.created_at))}</time></footer></article>)}</div> : null}</section>;
 }
 
 export function CustomerMenuItemPage() {
   const { slug } = useParams();
   const itemResource = useCustomerMenuItem(slug);
   const catalogResource = useCustomerCatalog();
+  const eligibleReviewMenuItemSlugs = useCustomerReviewEligibility();
   const item = itemResource.data?.item;
   const location = itemResource.data?.location ?? catalogResource.data?.location ?? null;
   const relatedItems = useMemo(() => {
@@ -521,8 +526,8 @@ export function CustomerMenuItemPage() {
           </section>
 
           <CustomerDishOrderPanel key={item.id} item={item} />
-          <CustomerDishReviews slug={item.slug} />
-          <RelatedDishes items={relatedItems} preparationMinutes={location?.preparation_minutes ?? null} />
+          <CustomerDishReviews canReview={eligibleReviewMenuItemSlugs.has(item.slug)} slug={item.slug} />
+          <RelatedDishes items={relatedItems} preparationMinutes={location?.preparation_minutes ?? null} reviewEligibleSlugs={eligibleReviewMenuItemSlugs} />
         </> : null}
       </main>
       <CustomerSiteFooter />

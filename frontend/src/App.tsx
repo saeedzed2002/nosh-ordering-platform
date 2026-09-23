@@ -10,6 +10,7 @@ import {
   CustomerSiteFooter,
   CustomerSiteHeader,
 } from "./CustomerMenuPage";
+import { useCustomerReviewEligibility } from "./customerAccount";
 import { customerMediaUrl, useCustomerCatalog } from "./customerCatalog";
 import { apiBaseUrl } from "./site";
 
@@ -44,6 +45,7 @@ function App() {
   const [apiStatus, setApiStatus] = useState<ApiStatus>("checking");
   const [publishedHomeContent, setPublishedHomeContent] = useState<PublishedHomeContent[]>([]);
   const catalog = useCustomerCatalog();
+  const eligibleReviewMenuItemSlugs = useCustomerReviewEligibility();
 
   useEffect(() => {
     const controller = new AbortController();
@@ -122,7 +124,7 @@ function App() {
           <div className="section-heading section-heading--split"><div><p className="eyebrow">Live kitchen board</p><h2 id="menu-title">Today’s menu, as the kitchen has set it.</h2></div><p>These dishes read from the published catalogue. Availability, dietary tags, allergens, and prices no longer come from seeded browser data.</p></div>
           {catalog.status === "loading" ? <div className="home-menu-loading"><Clock3 aria-hidden="true" /> Setting today’s table…</div> : null}
           {catalog.status === "error" ? <div className="home-menu-error">The live menu is temporarily unavailable. <Link to="/menu">Try the full menu</Link> once the local service is ready.</div> : null}
-          {featuredItems.length ? <div className="customer-menu-grid home-customer-menu-grid">{featuredItems.map((item) => <CustomerMenuCard key={item.id} item={item} preparationMinutes={preparationMinutes} />)}</div> : null}
+          {featuredItems.length ? <div className="customer-menu-grid home-customer-menu-grid">{featuredItems.map((item) => <CustomerMenuCard canReview={eligibleReviewMenuItemSlugs.has(item.slug)} key={item.id} item={item} preparationMinutes={preparationMinutes} />)}</div> : null}
           <Link className="home-menu-link" to="/menu">Browse the full menu <ArrowRight aria-hidden="true" /></Link>
         </section>
 

@@ -30,6 +30,7 @@ import {
 import { formatCustomerPrice, useCustomerCatalog } from "./customerCatalog";
 import {
   isTrackingIssue,
+  isReviewEligibleOrderStatus,
   trackingStatusDescription,
   trackingStatusLabel,
   trackingStepState,
@@ -372,12 +373,14 @@ export function CustomerOrderConfirmationPage() {
             <div className="customer-tracker-status-actions"><small>{lastCheckedAt ? `Last checked ${formatMoment(lastCheckedAt)}` : "Checking the kitchen…"}</small><Button className="customer-tracker-refresh" loading={isRefreshing} size="compact" variant="quiet" onClick={() => setAttempt((current) => current + 1)}><RefreshCw aria-hidden="true" /> Refresh</Button></div>
           </section>
           {refreshWarning ? <p className="customer-tracker-warning" role="status">{refreshWarning}</p> : null}
+          {isReviewEligibleOrderStatus(receipt.status) ? <section className="customer-tracker-review" aria-labelledby="tracker-review-title"><div><p className="eyebrow">Your meal</p><h2 id="tracker-review-title">Tell us how each dish was.</h2><p>If this completed order belongs to your customer account, you can score each dish and leave a note. The kitchen reviews feedback before it appears on the menu.</p></div><Link className="nosh-button" data-size="default" data-variant="secondary" to="/account#reviews">Rate your dishes</Link></section> : null}
           <section className="customer-tracker-progress" aria-label="Order progress">
             <p className="eyebrow">Order journey</p>
             <ol>
               {trackingSteps(receipt.fulfillment_method).map((step) => {
                 const state = trackingStepState(receipt.status, receipt.fulfillment_method, step.status);
-                return <li key={step.status} className={state} aria-current={state === "current" ? "step" : undefined}><span>{state === "complete" ? <CheckCircle2 aria-hidden="true" /> : <Circle aria-hidden="true" />}</span><strong>{step.label}</strong></li>;
+                const isCompletedStep = state === "complete" || (state === "current" && isReviewEligibleOrderStatus(receipt.status));
+                return <li key={step.status} className={isCompletedStep ? "complete" : state} aria-current={state === "current" ? "step" : undefined}><span>{isCompletedStep ? <CheckCircle2 aria-hidden="true" /> : <Circle aria-hidden="true" />}</span><strong>{step.label}</strong></li>;
               })}
             </ol>
           </section>

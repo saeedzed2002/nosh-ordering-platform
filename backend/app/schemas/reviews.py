@@ -46,6 +46,10 @@ class CustomerReviewResponse(BaseModel):
     updated_at: datetime
 
 
+class CustomerReviewEligibilityResponse(BaseModel):
+    menu_item_slugs: list[str]
+
+
 class PublicReviewResponse(BaseModel):
     rating: int
     body: str

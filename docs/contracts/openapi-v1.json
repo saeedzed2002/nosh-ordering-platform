@@ -2434,6 +2434,22 @@
         "title": "CustomerReorderResponse",
         "type": "object"
       },
+      "CustomerReviewEligibilityResponse": {
+        "properties": {
+          "menu_item_slugs": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Menu Item Slugs",
+            "type": "array"
+          }
+        },
+        "required": [
+          "menu_item_slugs"
+        ],
+        "title": "CustomerReviewEligibilityResponse",
+        "type": "object"
+      },
       "CustomerReviewResponse": {
         "properties": {
           "body": {
@@ -5478,6 +5494,32 @@
           }
         ],
         "summary": "Create Customer Review",
+        "tags": [
+          "Customer reviews"
+        ]
+      }
+    },
+    "/api/v1/account/reviews/eligible-menu-items": {
+      "get": {
+        "operationId": "list_eligible_review_menu_items_api_v1_account_reviews_eligible_menu_items_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerReviewEligibilityResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Eligible Review Menu Items",
         "tags": [
           "Customer reviews"
         ]

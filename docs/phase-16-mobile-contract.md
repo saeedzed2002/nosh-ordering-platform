@@ -80,8 +80,9 @@ same separation between structured validation errors and safe domain messages.
    delivery address, kitchen instructions, refresh tokens, and audit metadata
    are not public-mobile data.
 6. Reorder returns a newly validated draft and never copies a historical total.
-   Reviews require an account-owned delivered order item and remain pending
-   until staff moderation.
+   Reviews require an account-owned completed order item: `delivered` for
+   delivery or `handed_to_customer` for pickup. They remain pending until
+   staff moderation.
 
 ## Design and component contract
 

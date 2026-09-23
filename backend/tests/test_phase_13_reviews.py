@@ -23,17 +23,24 @@ def manager_headers(client: TestClient) -> dict[str, str]:
     return {"Authorization": f"Bearer {response.json()['access_token']}"}
 
 
-def checkout_payload(client: TestClient) -> dict[str, object]:
+def checkout_payload(
+    client: TestClient,
+    *,
+    fulfillment_method: str = "delivery",
+    idempotency_key: str = "phase13-review-checkout-001",
+) -> dict[str, object]:
     item = client.get("/api/v1/catalog/menu-items/harissa-chicken-bowl").json()
     return {
-        "idempotency_key": "phase13-review-checkout-001",
+        "idempotency_key": idempotency_key,
         "location_slug": "market-quarter",
-        "fulfillment_method": "delivery",
+        "fulfillment_method": fulfillment_method,
         "timing": "immediate",
         "recipient_name": "Review Customer",
         "recipient_email": "review.customer@example.test",
         "recipient_phone": "+1 555 010 0190",
-        "delivery_address": "13 Review Lane",
+        "delivery_address": "13 Review Lane"
+        if fulfillment_method == "delivery"
+        else None,
         "fulfillment_instructions": None,
         "promotion_code": None,
         "payment_scenario": "succeeds",
@@ -68,7 +75,24 @@ def transition_to_delivered(
         assert response.status_code == 200
 
 
-def test_reviews_require_an_owned_delivered_item_and_public_only_shows_approved(
+def transition_to_handed_to_customer(
+    client: TestClient, reference: str, headers: dict[str, str]
+) -> None:
+    for next_status in [
+        "accepted",
+        "preparing",
+        "ready_for_pickup",
+        "handed_to_customer",
+    ]:
+        response = client.post(
+            f"/api/v1/admin/orders/{reference}/transitions",
+            headers=headers,
+            json={"status": next_status},
+        )
+        assert response.status_code == 200
+
+
+def test_reviews_require_an_owned_completed_item_and_public_only_shows_approved(
     seeded_client: TestClient,
 ) -> None:
     owner_headers = customer_headers(seeded_client, "review.owner@example.com")
@@ -94,8 +118,17 @@ def test_reviews_require_an_owned_delivered_item_and_public_only_shows_approved(
         },
     )
     assert before_delivery.status_code == 404
+    assert seeded_client.get(
+        "/api/v1/account/reviews/eligible-menu-items", headers=owner_headers
+    ).json() == {"menu_item_slugs": []}
 
     transition_to_delivered(seeded_client, reference, manager_headers(seeded_client))
+    assert seeded_client.get(
+        "/api/v1/account/reviews/eligible-menu-items", headers=owner_headers
+    ).json() == {"menu_item_slugs": ["harissa-chicken-bowl"]}
+    assert seeded_client.get(
+        "/api/v1/account/reviews/eligible-menu-items", headers=other_headers
+    ).json() == {"menu_item_slugs": []}
     created = seeded_client.post(
         "/api/v1/account/reviews",
         headers=owner_headers,
@@ -108,6 +141,9 @@ def test_reviews_require_an_owned_delivered_item_and_public_only_shows_approved(
     assert created.status_code == 201
     assert created.json()["status"] == "pending"
     review_id = created.json()["id"]
+    assert seeded_client.get(
+        "/api/v1/account/reviews/eligible-menu-items", headers=owner_headers
+    ).json() == {"menu_item_slugs": []}
     assert (
         seeded_client.post(
             "/api/v1/account/reviews",
@@ -173,3 +209,44 @@ def test_reviews_require_an_owned_delivered_item_and_public_only_shows_approved(
         ).status_code
         == 403
     )
+
+
+def test_reviews_allow_an_owned_collected_pickup_item(
+    seeded_client: TestClient,
+) -> None:
+    headers = customer_headers(seeded_client, "review.pickup@example.com")
+    order = seeded_client.post(
+        "/api/v1/orders/checkout",
+        headers=headers,
+        json=checkout_payload(
+            seeded_client,
+            fulfillment_method="pickup",
+            idempotency_key="phase13-review-pickup-checkout-001",
+        ),
+    )
+    assert order.status_code == 201
+    reference = order.json()["public_reference"]
+    order_item_id = seeded_client.get("/api/v1/account/orders", headers=headers).json()[
+        0
+    ]["lines"][0]["id"]
+
+    transition_to_handed_to_customer(
+        seeded_client, reference, manager_headers(seeded_client)
+    )
+    assert seeded_client.get(
+        "/api/v1/account/reviews/eligible-menu-items", headers=headers
+    ).json() == {"menu_item_slugs": ["harissa-chicken-bowl"]}
+    created = seeded_client.post(
+        "/api/v1/account/reviews",
+        headers=headers,
+        json={
+            "order_item_id": order_item_id,
+            "rating": 4,
+            "body": "The pickup handoff was clear and the vegetables stayed crisp.",
+        },
+    )
+    assert created.status_code == 201
+    assert created.json()["status"] == "pending"
+    assert seeded_client.get(
+        "/api/v1/account/reviews/eligible-menu-items", headers=headers
+    ).json() == {"menu_item_slugs": []}

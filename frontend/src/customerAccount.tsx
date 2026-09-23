@@ -10,6 +10,7 @@ import {
   type PropsWithChildren,
 } from "react";
 
+import type { components } from "./api/generated/v1";
 import { ApiError, apiUrl, readJson, unauthenticatedJson } from "./admin/api";
 
 export type CustomerAccountUser = {
@@ -67,6 +68,8 @@ export type CustomerReview = {
   created_at: string;
   updated_at: string;
 };
+
+type CustomerReviewEligibility = components["schemas"]["CustomerReviewEligibilityResponse"];
 
 export type CustomerReorder = {
   location_slug: string;
@@ -258,4 +261,35 @@ export function useCustomerAccount(): CustomerAccountContextValue {
     throw new Error("Customer account components must be rendered within CustomerAccountProvider.");
   }
   return context;
+}
+
+export function useCustomerReviewEligibility(): ReadonlySet<string> {
+  const { ready, request, session } = useCustomerAccount();
+  const [menuItemSlugs, setMenuItemSlugs] = useState<string[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    if (!ready || !session) {
+      setMenuItemSlugs([]);
+      return () => {
+        active = false;
+      };
+    }
+    void request<CustomerReviewEligibility>("/api/v1/account/reviews/eligible-menu-items")
+      .then(({ menu_item_slugs: slugs }) => {
+        if (active) {
+          setMenuItemSlugs(slugs);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setMenuItemSlugs([]);
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [ready, request, session]);
+
+  return useMemo(() => new Set(menuItemSlugs), [menuItemSlugs]);
 }
