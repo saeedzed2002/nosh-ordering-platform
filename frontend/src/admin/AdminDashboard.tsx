@@ -1,4 +1,4 @@
-import { ArrowUpRight, CheckCircle2, ClipboardList, Image, PanelsTopLeft, UtensilsCrossed } from "lucide-react";
+import { ArrowUpRight, CheckCircle2, ClipboardList, Image, PanelsTopLeft, SlidersHorizontal, UtensilsCrossed } from "lucide-react";
 import { Link, Navigate } from "react-router-dom";
 
 import { useAdminSession } from "./session";
@@ -33,6 +33,15 @@ export function AdminDashboard() {
             <span>Order desk</span>
             <strong>Keep every handoff clear</strong>
             <p>Review the next safe step, customer details, allergens, timing, and the kitchen queue.</p>
+          </div>
+          <ArrowUpRight aria-hidden="true" />
+        </Link>
+        <Link className="admin-action-card" to="/admin/operations">
+          <SlidersHorizontal aria-hidden="true" />
+          <div>
+            <span>Restaurant operations</span>
+            <strong>Keep the business rules visible</strong>
+            <p>Manage promotions, service settings, accounts, reports, and the owner audit history.</p>
           </div>
           <ArrowUpRight aria-hidden="true" />
         </Link>

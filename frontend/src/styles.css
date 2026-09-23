@@ -6994,6 +6994,334 @@ select:focus-visible {
 .admin-review-list time, .admin-review-list small { color: var(--text-muted); font-size: 0.82rem; }
 .admin-review-list footer > div:last-child { display: flex; flex-wrap: wrap; justify-content: end; gap: 0.5rem; }
 
+.admin-operations,
+.operations-form-card,
+.operations-list-card,
+.operations-detail-card,
+.operations-reports,
+.operations-audit,
+.operations-section-heading,
+.operations-restaurant form,
+.operations-restaurant fieldset,
+.operations-audit > div,
+.operations-report-grid,
+.operations-report-grid section,
+.operations-metrics,
+.operations-promotion-list,
+.operations-customer-list,
+.operations-order-history,
+.operations-hours > div {
+  display: grid;
+  gap: 1rem;
+}
+
+.admin-operations {
+  padding: clamp(1.5rem, 4vw, 3rem);
+}
+
+.operations-heading-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.75rem 0.95rem;
+  color: var(--surface-inverse);
+  background: var(--surface-muted);
+  font-size: 0.84rem;
+  font-weight: 850;
+}
+
+.operations-heading-mark svg { color: var(--action-primary-hover); }
+
+.operations-tabs {
+  display: flex;
+  overflow-x: auto;
+  gap: 0.4rem;
+  padding: 0.45rem;
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-raised);
+}
+
+.operations-tabs button {
+  display: inline-flex;
+  flex: 1 0 max-content;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 2.75rem;
+  border: 0;
+  padding: 0.55rem 0.85rem;
+  color: var(--text-muted);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 850;
+}
+
+.operations-tabs button:hover,
+.operations-tabs button.active {
+  color: var(--surface-raised);
+  background: var(--surface-inverse);
+}
+
+.operations-tabs button svg { width: 1rem; height: 1rem; }
+
+.operations-split {
+  display: grid;
+  grid-template-columns: minmax(18rem, 0.8fr) minmax(0, 1.2fr);
+  gap: 1.25rem;
+}
+
+.operations-form-card,
+.operations-list-card,
+.operations-detail-card,
+.operations-reports,
+.operations-audit {
+  padding: clamp(1.1rem, 2.5vw, 1.75rem);
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-raised);
+}
+
+.operations-form-card h2,
+.operations-list-card h2,
+.operations-detail-card h2,
+.operations-reports h2,
+.operations-audit h2 {
+  margin: 0.5rem 0 0;
+  color: var(--surface-inverse);
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 3vw, 2.6rem);
+  font-weight: 570;
+  letter-spacing: -0.05em;
+  line-height: 0.96;
+}
+
+.operations-form-card header > p:not(.admin-kicker),
+.operations-list-card header > p:not(.admin-kicker),
+.operations-detail-card header > p:not(.admin-kicker),
+.operations-reports header > div > p:not(.admin-kicker),
+.operations-audit header > div > p:not(.admin-kicker) {
+  margin: 0.8rem 0 0;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.operations-form-card form,
+.operations-restaurant form {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.operations-form-card label,
+.operations-reports form label,
+.operations-location-picker label,
+.operations-hours label {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--surface-inverse);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.operations-form-card input,
+.operations-form-card select,
+.operations-form-card textarea,
+.operations-reports input,
+.operations-location-picker select,
+.operations-search input,
+.operations-hours input {
+  min-height: 2.65rem;
+  border: 1px solid var(--border-strong);
+  padding: 0.5rem 0.6rem;
+  color: var(--text-strong);
+  background: var(--surface-canvas);
+  font: inherit;
+}
+
+.operations-form-card textarea { min-height: 5.5rem; resize: vertical; }
+.operations-form-card small { color: var(--text-muted); font-weight: 650; }
+
+.operations-check-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+}
+
+.operations-check {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--surface-inverse) !important;
+  cursor: pointer;
+  font-size: 0.84rem !important;
+}
+
+.operations-check input { min-height: auto !important; accent-color: var(--action-primary); }
+
+.operations-form-card footer,
+.operations-list-card > header,
+.operations-audit > header,
+.operations-section-heading,
+.operations-promotion-list article footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.operations-promotion-list article {
+  display: grid;
+  gap: 0.5rem;
+  padding: 1rem;
+  border-top: 3px solid var(--action-primary);
+  background: var(--surface-muted);
+}
+
+.operations-promotion-list article > div,
+.operations-promotion-list article > div:first-child {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.operations-promotion-list h3,
+.operations-order-history h3,
+.operations-report-grid h3 {
+  margin: 0;
+  color: var(--surface-inverse);
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 600;
+}
+
+.operations-promotion-list p,
+.operations-promotion-list small { margin: 0; color: var(--text-muted); line-height: 1.4; }
+.operations-promotion-list footer { justify-content: flex-start; margin-top: 0.25rem; }
+
+.operation-state {
+  display: inline-flex;
+  width: fit-content;
+  padding: 0.2rem 0.45rem;
+  color: #884523;
+  background: #f7dfbd;
+  font-size: 0.72rem;
+  font-style: normal;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.operation-state.active { color: #145c35; background: #dcecdc; }
+
+.operations-location-picker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem;
+  background: var(--surface-muted);
+}
+
+.operations-location-picker label { min-width: min(100%, 19rem); }
+.operations-location-picker > span { color: var(--text-muted); font-size: 0.8rem; font-weight: 800; }
+
+.operations-hours {
+  min-width: 0;
+  margin: 0;
+  padding: 1rem;
+  border: 1px solid var(--border-subtle);
+}
+
+.operations-hours legend { padding: 0 0.35rem; color: var(--surface-inverse); font-family: var(--font-display); font-size: 1.25rem; }
+
+.operations-hours article {
+  display: grid;
+  grid-template-columns: minmax(6.5rem, 1fr) minmax(4rem, 0.65fr) minmax(6rem, 0.9fr) minmax(6rem, 0.9fr);
+  align-items: end;
+  gap: 0.65rem;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.operations-hours article:last-child { border-bottom: 0; }
+.operations-hours article > strong { padding-bottom: 0.6rem; color: var(--surface-inverse); }
+
+.operations-search { display: flex; gap: 0.5rem; }
+.operations-search input { flex: 1; min-width: 0; }
+
+.operations-customer-list { max-height: 33rem; overflow: auto; }
+
+.operations-customer-list button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border: 1px solid var(--border-subtle);
+  padding: 0.85rem;
+  color: var(--text-strong);
+  background: var(--surface-canvas);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.operations-customer-list button:hover,
+.operations-customer-list button.selected { border-color: var(--action-primary); background: #f5e7d9; }
+.operations-customer-list button > span { display: grid; gap: 0.2rem; }
+.operations-customer-list button > span:last-child { justify-items: end; }
+.operations-customer-list small { color: var(--text-muted); font-size: 0.78rem; }
+
+.operations-detail-card { align-content: start; }
+.operations-detail-card > dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem; margin: 0; }
+.operations-detail-card > dl div { padding: 0.75rem; background: var(--surface-muted); }
+.operations-detail-card dt { color: var(--text-muted); font-size: 0.75rem; font-weight: 800; text-transform: uppercase; }
+.operations-detail-card dd { margin: 0.3rem 0 0; color: var(--surface-inverse); font-weight: 850; }
+.operations-role-note { margin: 0; color: var(--text-muted); font-size: 0.86rem; }
+
+.operations-order-history article,
+.operations-report-grid article {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.operations-order-history article { display: grid; grid-template-columns: 1fr auto; }
+.operations-order-history article small { grid-column: 1 / -1; color: var(--text-muted); }
+.operations-order-history article span,
+.operations-report-grid article span { color: var(--text-muted); text-align: right; }
+
+.operations-section-heading { align-items: end; }
+.operations-section-heading form { display: flex; flex-wrap: wrap; align-items: end; gap: 0.5rem; }
+.operations-reports form label { display: grid; gap: 0.3rem; color: var(--text-muted); font-size: 0.78rem; font-weight: 800; }
+
+.operations-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.operations-metrics article { display: grid; gap: 0.3rem; padding: 1rem; color: var(--surface-raised); background: var(--surface-inverse); }
+.operations-metrics span { color: #f1a167; font-size: 0.74rem; font-weight: 900; letter-spacing: 0.06em; text-transform: uppercase; }
+.operations-metrics strong { font-family: var(--font-display); font-size: clamp(1.8rem, 3vw, 2.7rem); font-weight: 560; letter-spacing: -0.05em; }
+.operations-metrics small { color: #d5dfd3; line-height: 1.3; }
+
+.operations-report-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.operations-report-grid section { padding: 1rem; background: var(--surface-muted); }
+.operations-report-grid section > p { margin: 0; color: var(--text-muted); }
+
+.operations-audit > div > article { display: grid; gap: 0.5rem; padding: 1rem; border: 1px solid var(--border-subtle); }
+.operations-audit article header { display: flex; justify-content: space-between; gap: 1rem; color: var(--surface-inverse); }
+.operations-audit article time, .operations-audit article > p { margin: 0; color: var(--text-muted); font-size: 0.82rem; }
+.operations-audit article dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; margin: 0; }
+.operations-audit article dl div { min-width: 0; padding: 0.65rem; background: var(--surface-muted); }
+.operations-audit article dt { color: var(--text-muted); font-size: 0.75rem; font-weight: 850; text-transform: uppercase; }
+.operations-audit article dd { margin: 0.35rem 0 0; overflow: auto; color: var(--text-strong); font-size: 0.75rem; white-space: pre-wrap; word-break: break-word; }
+
+@media (max-width: 980px) {
+  .operations-split,
+  .operations-report-grid { grid-template-columns: 1fr; }
+}
+
 @media (max-width: 780px) {
   .customer-auth-layout,
   .customer-account-grid {
@@ -7002,6 +7330,21 @@ select:focus-visible {
 
   .customer-dish-reviews > div,
   .admin-review-desk > header { grid-template-columns: 1fr; }
+
+  .admin-operations { padding: 1.1rem; }
+  .operations-heading-mark { display: none; }
+  .operations-tabs { margin-inline: -0.2rem; }
+  .operations-tabs button { flex: 0 0 auto; }
+  .operations-section-heading,
+  .operations-section-heading form,
+  .operations-form-card footer,
+  .operations-list-card > header,
+  .operations-audit > header { align-items: stretch; flex-direction: column; }
+  .operations-hours article { grid-template-columns: 1fr 1fr; }
+  .operations-hours article > strong { grid-column: 1 / -1; padding-bottom: 0; }
+  .operations-metrics,
+  .operations-detail-card > dl,
+  .operations-audit article dl { grid-template-columns: 1fr; }
 
   .customer-auth-layout {
     min-height: auto;
@@ -7638,6 +7981,16 @@ select:focus-visible {
   font-weight: 850;
   letter-spacing: 0.06em;
   text-transform: uppercase;
+}
+
+.admin-order-modal textarea {
+  min-height: 6rem;
+  border: 1px solid var(--border-strong);
+  padding: 0.6rem;
+  color: var(--text-strong);
+  background: var(--surface-canvas);
+  font: inherit;
+  resize: vertical;
 }
 
 .admin-order-controls-save {

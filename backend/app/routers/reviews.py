@@ -27,6 +27,7 @@ from app.schemas.reviews import (
     ReviewModerationAction,
     ReviewModerationRequest,
 )
+from app.services.audit import record_audit_event
 from app.services.auth import CustomerCurrentUserDep, require_roles
 
 customer_router = APIRouter(prefix="/api/v1/account/reviews", tags=["Customer reviews"])
@@ -250,6 +251,10 @@ def moderate_review(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="We could not find that review.",
         )
+    before = {
+        "status": ReviewStatus(review.status).value,
+        "internal_reason": review.internal_reason,
+    }
     next_status = {
         ReviewModerationAction.APPROVE: ReviewStatus.APPROVED,
         ReviewModerationAction.REJECT: ReviewStatus.REJECTED,
@@ -266,5 +271,17 @@ def moderate_review(
     review.moderated_by_id = current_user.id
     review.moderated_by = current_user
     review.moderated_at = datetime.now(UTC)
+    record_audit_event(
+        session,
+        current_user,
+        entity_type="review",
+        entity_id=review.id,
+        action="moderated",
+        before_snapshot=before,
+        after_snapshot={
+            "status": next_status.value,
+            "internal_reason": review.internal_reason,
+        },
+    )
     session.commit()
     return serialize_admin_review(review)

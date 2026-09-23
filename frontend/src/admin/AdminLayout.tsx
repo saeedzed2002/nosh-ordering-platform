@@ -1,4 +1,4 @@
-import { ClipboardList, Image, LayoutDashboard, LogOut, MessageSquareText, PanelsTopLeft, UtensilsCrossed } from "lucide-react";
+import { ClipboardList, Image, LayoutDashboard, LogOut, MessageSquareText, PanelsTopLeft, SlidersHorizontal, UtensilsCrossed } from "lucide-react";
 import { NavLink, Outlet } from "react-router-dom";
 
 import { Button } from "../components/ui/Button";
@@ -7,6 +7,7 @@ import { useAdminSession } from "./session";
 const navigationItems = [
   { label: "Orders", to: "/admin/orders", icon: ClipboardList },
   { label: "Reviews", to: "/admin/reviews", icon: MessageSquareText },
+  { label: "Operations", to: "/admin/operations", icon: SlidersHorizontal },
   { label: "Home", to: "/admin/home", icon: PanelsTopLeft },
   { label: "Menu", to: "/admin/menu", icon: UtensilsCrossed },
   { label: "Media", to: "/admin/media", icon: Image },

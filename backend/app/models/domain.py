@@ -597,6 +597,28 @@ class CatalogChange(TimestampedUUIDMixin, Base):
     actor: Mapped[User] = relationship()
 
 
+class AuditLog(TimestampedUUIDMixin, Base):
+    __tablename__ = "audit_logs"
+    __table_args__ = (
+        Index("ix_audit_logs_entity_created_at", "entity_type", "created_at"),
+        Index("ix_audit_logs_actor_created_at", "actor_id", "created_at"),
+    )
+
+    actor_id: Mapped[UUID] = mapped_column(
+        ForeignKey("users.id"), nullable=False, index=True
+    )
+    entity_type: Mapped[str] = mapped_column(String(48), nullable=False, index=True)
+    entity_id: Mapped[UUID | None] = mapped_column(Uuid, index=True)
+    action: Mapped[str] = mapped_column(String(64), nullable=False)
+    before_snapshot: Mapped[dict[str, Any]] = mapped_column(
+        JSON, nullable=False, default=dict
+    )
+    after_snapshot: Mapped[dict[str, Any]] = mapped_column(
+        JSON, nullable=False, default=dict
+    )
+    actor: Mapped[User] = relationship()
+
+
 class Promotion(TimestampedUUIDMixin, Base):
     __tablename__ = "promotions"
     __table_args__ = (

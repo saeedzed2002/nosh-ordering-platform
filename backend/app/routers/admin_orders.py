@@ -88,9 +88,9 @@ def save_order_controls(
     location_id: UUID,
     request: LocationOrderControlsRequest,
     session: SessionDep,
-    _: OrderControlsDep,
+    current_user: OrderControlsDep,
 ) -> LocationOrderControlsResponse:
-    return update_location_controls(session, location_id, request)
+    return update_location_controls(session, location_id, request, current_user)
 
 
 @router.get(

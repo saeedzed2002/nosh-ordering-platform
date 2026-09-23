@@ -22,6 +22,7 @@ from app.schemas.admin import (
     HomeContentPublishRequest,
     HomeContentRevisionResponse,
 )
+from app.services.audit import record_audit_event
 from app.services.auth import require_roles
 
 router = APIRouter(prefix="/api/v1/admin/home", tags=["Admin home"])
@@ -138,6 +139,15 @@ def save_home_draft(
         snapshot=snapshot_from_request(request, content),
     )
     session.add(revision)
+    record_audit_event(
+        session,
+        current_user,
+        entity_type="home_content",
+        entity_id=content.id,
+        action="draft_saved",
+        before_snapshot={},
+        after_snapshot=snapshot_from_request(request, content),
+    )
     session.commit()
     session.expire_all()
     return serialize_home_content(select_home_content(content_key, session))
@@ -171,6 +181,14 @@ def publish_home_draft(
             detail="The selected media is no longer available.",
         )
 
+    before_snapshot = {
+        "heading": content.heading,
+        "supporting_copy": content.supporting_copy,
+        "action_label": content.action_label,
+        "action_href": content.action_href,
+        "media_id": str(content.media_id) if content.media_id else None,
+        "publication_state": PublicationState(content.publication_state).value,
+    }
     content.heading = str(snapshot["heading"])
     content.supporting_copy = str(snapshot["supporting_copy"])
     content.action_label = snapshot["action_label"]
@@ -188,6 +206,18 @@ def publish_home_draft(
             action=HomeContentRevisionAction.PUBLISHED,
             snapshot=snapshot,
         )
+    )
+    record_audit_event(
+        session,
+        current_user,
+        entity_type="home_content",
+        entity_id=content.id,
+        action="published",
+        before_snapshot=before_snapshot,
+        after_snapshot={
+            **snapshot,
+            "publication_state": PublicationState.PUBLISHED.value,
+        },
     )
     session.commit()
     session.expire_all()

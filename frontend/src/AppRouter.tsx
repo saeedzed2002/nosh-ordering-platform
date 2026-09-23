@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 
 import { AdminDashboard } from "./admin/AdminDashboard";
@@ -8,7 +9,6 @@ import { MenuEditorPage } from "./admin/MenuEditorPage";
 import { MenuWorkspacePage } from "./admin/MenuWorkspacePage";
 import { MediaLibraryPage } from "./admin/MediaLibraryPage";
 import { OrderDeskPage } from "./admin/OrderDeskPage";
-import { ReviewDeskPage } from "./admin/ReviewDeskPage";
 import { AdminSessionProvider, useAdminSession } from "./admin/session";
 import App from "./App";
 import { CustomerCartProvider } from "./customerCart";
@@ -22,6 +22,13 @@ import {
 import { CustomerCheckoutPage, CustomerOrderConfirmationPage } from "./CustomerCheckoutPage";
 import { CustomerMenuItemPage, CustomerMenuPage } from "./CustomerMenuPage";
 import { AboutPage, LocationsPage, NotFoundPage } from "./SitePages";
+
+const OperationsPage = lazy(async () => ({
+  default: (await import("./admin/OperationsPage")).OperationsPage,
+}));
+const ReviewDeskPage = lazy(async () => ({
+  default: (await import("./admin/ReviewDeskPage")).ReviewDeskPage,
+}));
 
 function AdminGuard() {
   const location = useLocation();
@@ -62,7 +69,8 @@ export function AppRouter() {
             <Route path="/admin/menu/new" element={<MenuEditorPage />} />
             <Route path="/admin/menu/:slug" element={<MenuEditorPage />} />
             <Route path="/admin/orders" element={<OrderDeskPage />} />
-            <Route path="/admin/reviews" element={<ReviewDeskPage />} />
+            <Route path="/admin/reviews" element={<Suspense fallback={<main className="admin-inline-loading">Loading reviews…</main>}><ReviewDeskPage /></Suspense>} />
+            <Route path="/admin/operations" element={<Suspense fallback={<main className="admin-inline-loading">Loading operations…</main>}><OperationsPage /></Suspense>} />
           </Route>
           <Route path="*" element={<NotFoundPage />} />
             </Routes>

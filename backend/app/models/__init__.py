@@ -1,5 +1,6 @@
 from app.models.domain import (
     Allergen,
+    AuditLog,
     AvailabilityState,
     CatalogChange,
     CatalogChangeAction,
@@ -38,6 +39,7 @@ from app.models.domain import (
 
 __all__ = [
     "Allergen",
+    "AuditLog",
     "AvailabilityState",
     "CatalogChange",
     "CatalogChangeAction",

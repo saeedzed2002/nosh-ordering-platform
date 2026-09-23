@@ -16,6 +16,7 @@ from app.models import (
     Order,
     OrderStatus,
     OrderStatusEvent,
+    User,
 )
 from app.schemas.admin_orders import (
     AdminOrderAllergenResponse,
@@ -29,6 +30,7 @@ from app.schemas.admin_orders import (
     LocationOrderControlsResponse,
     OrderDeskQueue,
 )
+from app.services.audit import record_audit_event
 from app.services.order_lifecycle import valid_next_statuses
 from app.services.ordering import ordering_availability
 
@@ -241,8 +243,27 @@ def location_controls_response(location: Location) -> LocationOrderControlsRespo
     )
 
 
+def location_controls_snapshot(location: Location) -> dict[str, object]:
+    return {
+        "name": location.name,
+        "online_ordering_state": OnlineOrderingState(
+            location.online_ordering_state
+        ).value,
+        "online_ordering_paused_until": (
+            location.online_ordering_paused_until.isoformat()
+        )
+        if location.online_ordering_paused_until
+        else None,
+        "preparation_minutes": location.preparation_minutes,
+        "demo_capacity": location.demo_capacity,
+    }
+
+
 def update_location_controls(
-    session: Session, location_id: UUID, request: LocationOrderControlsRequest
+    session: Session,
+    location_id: UUID,
+    request: LocationOrderControlsRequest,
+    actor: User | None = None,
 ) -> LocationOrderControlsResponse:
     location = session.scalar(
         select(Location).where(Location.id == location_id).with_for_update()
@@ -252,10 +273,21 @@ def update_location_controls(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="We could not find that kitchen location.",
         )
+    before = location_controls_snapshot(location)
     location.online_ordering_state = request.online_ordering_state
     location.online_ordering_paused_until = request.online_ordering_paused_until
     location.preparation_minutes = request.preparation_minutes
     location.demo_capacity = request.demo_capacity
+    if actor is not None:
+        record_audit_event(
+            session,
+            actor,
+            entity_type="location_order_controls",
+            entity_id=location.id,
+            action="updated",
+            before_snapshot=before,
+            after_snapshot=location_controls_snapshot(location),
+        )
     session.commit()
     session.refresh(location)
     return location_controls_response(location)

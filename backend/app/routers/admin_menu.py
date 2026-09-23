@@ -51,6 +51,7 @@ from app.schemas.admin_catalog import (
     MenuOptionGroupResponse,
     MenuOptionResponse,
 )
+from app.services.audit import record_audit_event
 from app.services.auth import require_roles
 
 router = APIRouter(prefix="/api/v1/admin/menu", tags=["Admin menu"])
@@ -88,6 +89,15 @@ def record_change(
             action=action,
             snapshot=snapshot,
         )
+    )
+    record_audit_event(
+        session,
+        actor,
+        entity_type=f"catalog_{entity_type}",
+        entity_id=entity_id,
+        action=action.value,
+        before_snapshot={},
+        after_snapshot=snapshot,
     )
 
 

@@ -14,7 +14,8 @@ administration workflow, the Phase 7 customer menu/discovery workflow, and the
 Phase 8 trustworthy-cart workflow, and the Phase 9 checkout-and-confirmation
 workflow, the Phase 10 customer-tracker-and-order-lifecycle workflow, and the
 Phase 11 staff-order-desk workflow, the Phase 12 customer-account workflow,
-and the Phase 13 eligible-review workflow:
+the Phase 13 eligible-review workflow, and the Phase 14 operational
+administration workflow:
 
 - independent React/Vite and FastAPI applications;
 - a PostgreSQL-backed readiness endpoint;
@@ -73,12 +74,16 @@ and the Phase 13 eligible-review workflow:
 - Phase 13 permits one review only for an account-owned delivered order item.
   New feedback is pending until a `Manager` or `Owner` moderates it; public
   dish responses return approved reviews only.
+- Phase 14 gives `Manager` and `Owner` a local operations workspace for
+  promotions, restaurant profile/hours/fulfillment settings, customer lookup,
+  and query-backed reports. Only the `Owner` can activate or deactivate a
+  customer account and inspect safe before/after audit metadata.
 
 Customer menu discovery, dish customization, the local cart, checkout, order
 tracking, the staff order desk, customer accounts, and eligible reviews are
-implemented. Real payments, real delivery integration, password recovery, and
-claiming older guest orders are not implemented and must not be represented as
-working product flows.
+implemented, as are local operations and reports. Real payments, real delivery
+integration, password recovery, and claiming older guest orders are not
+implemented and must not be represented as working product flows.
 
 ## Local run
 

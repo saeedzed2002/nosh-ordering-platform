@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.models import FulfillmentMethod, Order, OrderStatus, OrderStatusEvent, User
 from app.schemas.orders import OrderIssueReason, OrderStatusTransitionRequest
+from app.services.audit import record_audit_event
 from app.services.checkout import order_by_public_reference
 
 TERMINAL_STATUSES = {
@@ -145,6 +146,10 @@ def transition_order_status(
         if target_status in ISSUE_STATUSES and request.reason is not None
         else STATUS_NOTES[target_status]
     )
+    before = {
+        "public_reference": order.public_reference,
+        "status": OrderStatus(order.status).value,
+    }
     order.status = target_status
     session.add(
         OrderStatusEvent(
@@ -154,6 +159,19 @@ def transition_order_status(
             status=target_status,
             note=note,
         )
+    )
+    record_audit_event(
+        session,
+        actor,
+        entity_type="order",
+        entity_id=order.id,
+        action="status_transition",
+        before_snapshot=before,
+        after_snapshot={
+            "public_reference": order.public_reference,
+            "status": target_status.value,
+            "note": note,
+        },
     )
     session.commit()
     session.expire_all()
