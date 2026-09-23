@@ -1,5 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">Nosh plated dish</title>
   <rect width="64" height="64" rx="14" fill="#082c1d"/>
-  <path d="M18 47V17h8l13 18V17h8v30h-8L26 29v18Z" fill="#f8f2e8"/>
-  <circle cx="49" cy="46" r="4" fill="#ff5c1a"/>
+  <circle cx="32" cy="32" r="23" fill="#f8f2e8"/>
+  <circle cx="32" cy="32" r="18" fill="#e5d6bc"/>
+  <circle cx="32" cy="32" r="14" fill="#ed9d42"/>
+  <circle cx="25" cy="29" r="3" fill="#f6d478"/>
+  <circle cx="38" cy="28" r="3" fill="#f6d478"/>
+  <circle cx="34" cy="38" r="3" fill="#f6d478"/>
+  <path d="M24 38c4-8 11-11 17-10-2 7-8 12-17 10Z" fill="#3e7d56"/>
+  <path d="M27 36c4-2 7-4 11-6" fill="none" stroke="#f8f2e8" stroke-linecap="round" stroke-width="1.8"/>
+  <path d="M19 16c3-3 6-4 9-4" fill="none" stroke="#ff5c1a" stroke-linecap="round" stroke-width="3"/>
 </svg>
