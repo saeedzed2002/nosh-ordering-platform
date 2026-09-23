@@ -1,80 +1,30 @@
 import { useCallback, useEffect, useState } from "react";
 
+import type {
+  ApiV1Allergen,
+  ApiV1Availability,
+  ApiV1CartQuote,
+  ApiV1CartQuoteLine,
+  ApiV1CartSelectedOption,
+  ApiV1Category,
+  ApiV1Location,
+  ApiV1Media,
+  ApiV1MenuItem,
+  ApiV1Option,
+  ApiV1OptionGroup,
+  ApiV1PublicReview,
+  ApiV1PublicReviewList,
+} from "./api/v1";
 import { apiBaseUrl } from "./site";
 
-export type CustomerAvailability = "available" | "temporarily_unavailable" | "scheduled";
-
-export type CustomerMedia = {
-  id: string;
-  alt_text: string;
-  width: number;
-  height: number;
-};
-
-export type CustomerCategory = {
-  id: string;
-  name: string;
-  slug: string;
-  description: string | null;
-  display_order: number;
-  media: CustomerMedia | null;
-};
-
-export type CustomerAllergen = {
-  name: string;
-  slug: string;
-  note: string | null;
-};
-
-export type CustomerOption = {
-  id: string;
-  name: string;
-  price_delta_minor: number;
-  display_order: number;
-};
-
-export type CustomerOptionGroup = {
-  id: string;
-  name: string;
-  kind: "choice" | "extra" | "removal";
-  minimum_selections: number;
-  maximum_selections: number;
-  display_order: number;
-  options: CustomerOption[];
-};
-
-export type CustomerMenuItem = {
-  id: string;
-  name: string;
-  slug: string;
-  description: string;
-  ingredients: string[];
-  dietary_tags: string[];
-  base_price_minor: number;
-  demo_discount_minor: number;
-  final_price_minor: number;
-  currency_code: string;
-  display_order: number;
-  category: CustomerCategory;
-  availability: CustomerAvailability;
-  media: CustomerMedia | null;
-  allergens: CustomerAllergen[];
-  option_groups: CustomerOptionGroup[];
-};
-
-export type CustomerLocation = {
-  id: string;
-  name: string;
-  slug: string;
-  address_text: string;
-  pickup_instructions: string | null;
-  delivery_area_text: string | null;
-  pickup_available: boolean;
-  delivery_available: boolean;
-  preparation_minutes: number;
-  online_ordering_available: boolean;
-  online_ordering_message: string;
-};
+export type CustomerAvailability = ApiV1Availability;
+export type CustomerMedia = ApiV1Media;
+export type CustomerCategory = ApiV1Category;
+export type CustomerAllergen = ApiV1Allergen;
+export type CustomerOption = ApiV1Option;
+export type CustomerOptionGroup = ApiV1OptionGroup;
+export type CustomerMenuItem = ApiV1MenuItem;
+export type CustomerLocation = ApiV1Location;
 
 export type CustomerCatalogSnapshot = {
   items: CustomerMenuItem[];
@@ -90,44 +40,11 @@ export type CustomerCartLineInput = {
   note: string | null;
 };
 
-export type CustomerCartSelectedOption = {
-  id: string;
-  name: string;
-  option_group_name: string;
-  price_delta_minor: number;
-};
-
-export type CustomerCartQuoteLine = {
-  client_line_id: string;
-  menu_item_slug: string;
-  name: string;
-  media: CustomerMedia | null;
-  quantity: number;
-  note: string | null;
-  selected_options: CustomerCartSelectedOption[];
-  unit_price_minor: number;
-  line_total_minor: number;
-  currency_code: string;
-};
-
-export type CustomerCartQuote = {
-  lines: CustomerCartQuoteLine[];
-  subtotal_minor: number;
-  currency_code: string;
-};
-
-export type CustomerPublicReview = {
-  rating: number;
-  body: string;
-  reviewer_name: string;
-  created_at: string;
-};
-
-export type CustomerPublicReviewList = {
-  review_count: number;
-  average_rating: number | null;
-  reviews: CustomerPublicReview[];
-};
+export type CustomerCartSelectedOption = ApiV1CartSelectedOption;
+export type CustomerCartQuoteLine = ApiV1CartQuoteLine;
+export type CustomerCartQuote = ApiV1CartQuote;
+export type CustomerPublicReview = ApiV1PublicReview;
+export type CustomerPublicReviewList = ApiV1PublicReviewList;
 
 type ResourceState<T> = {
   data: T | null;

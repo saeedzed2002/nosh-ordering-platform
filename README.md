@@ -16,7 +16,7 @@ workflow, the Phase 10 customer-tracker-and-order-lifecycle workflow, and the
 Phase 11 staff-order-desk workflow, the Phase 12 customer-account workflow,
 the Phase 13 eligible-review workflow, the Phase 14 operational
 administration workflow, and the Phase 15 quality, accessibility, and browser
-evidence workflow:
+evidence workflow, and the Phase 16 mobile-ready contract workflow:
 
 - independent React/Vite and FastAPI applications;
 - a PostgreSQL-backed readiness endpoint;
@@ -83,6 +83,9 @@ evidence workflow:
   focus handling, fixes cross-origin customer `DELETE` requests, adds a
   committed favicon, and provides repeatable mobile, tablet, customer-order,
   and authenticated manager browser tests locally and in GitHub Actions.
+- Phase 16 freezes the generated `/api/v1` OpenAPI snapshot, generated
+  TypeScript client declarations, compatibility policy, ordering invariants,
+  design-state contract, and explicit mobile/production boundaries.
 
 Customer menu discovery, dish customization, the local cart, checkout, order
 tracking, the staff order desk, customer accounts, and eligible reviews are
@@ -143,6 +146,7 @@ npm install
 npm run check
 npm run test -- --run
 npm run test:e2e
+npm run generate:api
 
 Set-Location ../backend
 uv sync --group dev
@@ -182,4 +186,5 @@ the protected operational order-desk contract. See
 docs/phase-12-customer-accounts.md for account ownership, reorder, and privacy
 boundaries, docs/phase-14-operations.md for restaurant operations, and
 docs/phase-15-quality-accessibility.md for browser-test execution and the
-quality/accessibility scope.
+quality/accessibility scope. See docs/phase-16-mobile-contract.md for the
+versioned API, generated client types, and future native-client boundaries.
