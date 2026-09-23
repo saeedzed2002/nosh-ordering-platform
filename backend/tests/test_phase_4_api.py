@@ -1,5 +1,6 @@
 from io import BytesIO
 
+from fastapi.testclient import TestClient
 from PIL import Image
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
@@ -8,6 +9,22 @@ from app.db.session import get_engine
 from app.models import User
 from app.services.auth import create_token
 from app.services.seed import PROJECT_SEED_MEDIA
+
+
+def test_cors_allows_customer_delete_requests_from_the_local_frontend(
+    seeded_client: TestClient,
+) -> None:
+    response = seeded_client.options(
+        "/api/v1/account/favorites/harissa-chicken-bowl",
+        headers={
+            "Origin": "http://localhost:5173",
+            "Access-Control-Request-Method": "DELETE",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == "http://localhost:5173"
+    assert "DELETE" in response.headers["access-control-allow-methods"]
 
 
 def test_seeded_catalog_is_available_from_versioned_api(seeded_client) -> None:

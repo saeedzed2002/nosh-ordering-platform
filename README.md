@@ -14,8 +14,9 @@ administration workflow, the Phase 7 customer menu/discovery workflow, and the
 Phase 8 trustworthy-cart workflow, and the Phase 9 checkout-and-confirmation
 workflow, the Phase 10 customer-tracker-and-order-lifecycle workflow, and the
 Phase 11 staff-order-desk workflow, the Phase 12 customer-account workflow,
-the Phase 13 eligible-review workflow, and the Phase 14 operational
-administration workflow:
+the Phase 13 eligible-review workflow, the Phase 14 operational
+administration workflow, and the Phase 15 quality, accessibility, and browser
+evidence workflow:
 
 - independent React/Vite and FastAPI applications;
 - a PostgreSQL-backed readiness endpoint;
@@ -78,6 +79,10 @@ administration workflow:
   promotions, restaurant profile/hours/fulfillment settings, customer lookup,
   and query-backed reports. Only the `Owner` can activate or deactivate a
   customer account and inspect safe before/after audit metadata.
+- Phase 15 standardizes consequential administrator dialogs with keyboard-safe
+  focus handling, fixes cross-origin customer `DELETE` requests, adds a
+  committed favicon, and provides repeatable mobile, tablet, customer-order,
+  and authenticated manager browser tests locally and in GitHub Actions.
 
 Customer menu discovery, dish customization, the local cart, checkout, order
 tracking, the staff order desk, customer accounts, and eligible reviews are
@@ -137,6 +142,7 @@ Set-Location frontend
 npm install
 npm run check
 npm run test -- --run
+npm run test:e2e
 
 Set-Location ../backend
 uv sync --group dev
@@ -174,4 +180,6 @@ boundaries. See docs/phase-10-customer-tracker-and-lifecycle.md for the
 tracking and lifecycle boundaries, and docs/phase-11-admin-order-desk.md for
 the protected operational order-desk contract. See
 docs/phase-12-customer-accounts.md for account ownership, reorder, and privacy
-boundaries.
+boundaries, docs/phase-14-operations.md for restaurant operations, and
+docs/phase-15-quality-accessibility.md for browser-test execution and the
+quality/accessibility scope.

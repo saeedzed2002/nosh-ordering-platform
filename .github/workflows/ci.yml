@@ -42,3 +42,31 @@ jobs:
       - run: uv run ruff format --check .
       - run: uv run ruff check .
       - run: uv run pytest -q
+
+  browser-e2e:
+    name: Browser end-to-end checks
+    runs-on: ubuntu-latest
+    env:
+      NOSH_JWT_SECRET: ci-only-local-nosh-jwt-secret-key-2026
+      NOSH_SEED_ADMIN_PASSWORD: ci-only-local-admin-password
+      NOSH_E2E_ADMIN_EMAIL: manager@nosh.example
+      NOSH_E2E_ADMIN_PASSWORD: ci-only-local-admin-password
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: docker compose up --build --detach --wait
+      - run: docker compose exec -T backend uv run python -m app.commands.seed
+      - run: npm ci
+        working-directory: frontend
+      - run: npx playwright install --with-deps chromium
+        working-directory: frontend
+      - run: npm run test:e2e
+        working-directory: frontend
+      - if: failure()
+        run: docker compose logs --no-color
+      - if: always()
+        run: docker compose down --remove-orphans

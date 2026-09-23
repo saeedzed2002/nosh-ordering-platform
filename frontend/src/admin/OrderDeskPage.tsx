@@ -14,6 +14,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "../components/ui/Button";
+import { AdminModal } from "./AdminModal";
 import { ApiError } from "./api";
 import {
   formatOrderDeskMoment,
@@ -216,24 +217,6 @@ export function OrderDeskPage() {
     return () => { active = false; };
   }, [loadDetail, selectedReference]);
 
-  useEffect(() => {
-    if (!pendingIssue) {
-      return;
-    }
-    const priorFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setPendingIssue(null);
-      }
-    };
-    window.addEventListener("keydown", closeOnEscape);
-    issueReasonRef.current?.focus();
-    return () => {
-      window.removeEventListener("keydown", closeOnEscape);
-      priorFocus?.focus();
-    };
-  }, [pendingIssue]);
-
   async function refreshSelectedOrder(reference: string) {
     await Promise.all([loadDesk(), loadDetail(reference)]);
   }
@@ -334,7 +317,20 @@ export function OrderDeskPage() {
 
       {canManageControls ? <section className="admin-order-controls"><header><div><p className="admin-kicker">Online ordering controls</p><h2>Set the kitchen’s real local-demo capacity.</h2><p>These settings change server-side cart and checkout eligibility, not just a label in this desk.</p></div><span className={selectedControls?.ordering_available ? "available" : "paused"}>{selectedControls?.ordering_available ? "Ordering on" : "Ordering paused"}</span></header>{controls.length ? <div className="admin-order-controls-form"><label>Kitchen location<select value={selectedControlsId} onChange={(event) => setSelectedControlsId(event.target.value)}>{controls.map((entry) => <option key={entry.id} value={entry.id}>{entry.name}</option>)}</select></label><label>Online ordering<select value={controlsDraft?.online_ordering_state ?? "on"} onChange={(event) => setControlsDraft((current) => current ? { ...current, online_ordering_state: event.target.value as OnlineOrderingState } : current)}><option value="on">On</option><option value="timed_pause">Timed pause</option><option value="off">Off</option></select></label>{controlsDraft?.online_ordering_state === "timed_pause" ? <label>Pause ends<input required type="datetime-local" value={controlsDraft.online_ordering_paused_until} onChange={(event) => setControlsDraft((current) => current ? { ...current, online_ordering_paused_until: event.target.value } : current)} /></label> : null}<label>Preparation minutes<input min="0" max="240" type="number" value={controlsDraft?.preparation_minutes ?? 0} onChange={(event) => setControlsDraft((current) => current ? { ...current, preparation_minutes: Number(event.target.value) } : current)} /></label><label>Demo capacity<input min="0" max="10000" type="number" value={controlsDraft?.demo_capacity ?? 0} onChange={(event) => setControlsDraft((current) => current ? { ...current, demo_capacity: Number(event.target.value) } : current)} /></label><div className="admin-order-controls-save"><p>{selectedControls?.ordering_message}</p><Button loading={savingControls} onClick={() => void saveControls()}>Save kitchen controls</Button></div></div> : null}</section> : null}
 
-      {pendingIssue ? <div className="admin-order-modal-backdrop" role="presentation"><section aria-labelledby="issue-transition-title" className="admin-order-modal" role="dialog" aria-modal="true"><button aria-label="Close confirmation" className="admin-order-modal-close" type="button" onClick={() => setPendingIssue(null)}><X aria-hidden="true" /></button><p className="admin-kicker">{sensitiveStatuses.has(pendingIssue) ? "Sensitive order outcome" : "Customer follow-up"}</p><h2 id="issue-transition-title">{orderActionLabel(pendingIssue)}</h2><p>{sensitiveStatuses.has(pendingIssue) ? "Confirm this outcome and choose the customer-safe reason that will appear in their tracker." : "Choose the customer-safe reason the tracker should show before the kitchen continues."}</p><label>Reason<select ref={issueReasonRef} value={issueReason} onChange={(event) => setIssueReason(event.target.value as OrderIssueReason)}>{issueReasons.map((reason) => <option key={reason.value} value={reason.value}>{reason.label}</option>)}</select></label><div><Button variant="secondary" onClick={() => setPendingIssue(null)}>Go back</Button><Button loading={savingTransition === pendingIssue} variant={sensitiveStatuses.has(pendingIssue) ? "danger" : "primary"} onClick={() => void runTransition(pendingIssue, issueReason)}>Confirm {orderStatusLabel(pendingIssue)}</Button></div></section></div> : null}
+      <AdminModal
+        closeLabel="Close order transition confirmation"
+        description={pendingIssue && sensitiveStatuses.has(pendingIssue)
+          ? "Confirm this outcome and choose the customer-safe reason that will appear in their tracker."
+          : "Choose the customer-safe reason the tracker should show before the kitchen continues."}
+        initialFocusRef={issueReasonRef}
+        kicker={pendingIssue && sensitiveStatuses.has(pendingIssue) ? "Sensitive order outcome" : "Customer follow-up"}
+        onOpenChange={(open) => { if (!open) setPendingIssue(null); }}
+        open={pendingIssue !== null}
+        title={pendingIssue ? orderActionLabel(pendingIssue) : "Confirm order change"}
+      >
+        <label>Reason<select ref={issueReasonRef} value={issueReason} onChange={(event) => setIssueReason(event.target.value as OrderIssueReason)}>{issueReasons.map((reason) => <option key={reason.value} value={reason.value}>{reason.label}</option>)}</select></label>
+        <div><Button variant="secondary" onClick={() => setPendingIssue(null)}>Go back</Button><Button loading={savingTransition === pendingIssue} variant={pendingIssue && sensitiveStatuses.has(pendingIssue) ? "danger" : "primary"} onClick={() => { if (pendingIssue) void runTransition(pendingIssue, issueReason); }}>Confirm {pendingIssue ? orderStatusLabel(pendingIssue) : "change"}</Button></div>
+      </AdminModal>
     </div>
   );
 }

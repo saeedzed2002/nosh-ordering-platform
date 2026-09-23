@@ -8010,21 +8010,24 @@ select:focus-visible {
   position: fixed;
   z-index: 30;
   inset: 0;
-  display: grid;
-  place-items: center;
-  padding: 1rem;
   background: rgb(5 25 16 / 58%);
 }
 
 .admin-order-modal {
-  position: relative;
+  position: fixed;
+  z-index: 31;
+  top: 50%;
+  left: 50%;
   display: grid;
-  width: min(100%, 29rem);
+  width: min(calc(100vw - 2rem), 29rem);
+  max-height: calc(100dvh - 2rem);
   gap: 1rem;
   padding: 1.65rem;
   border: 1px solid var(--border-strong);
   background: var(--surface-raised);
   box-shadow: 0 1.2rem 4rem rgb(0 0 0 / 22%);
+  overflow-y: auto;
+  transform: translate(-50%, -50%);
 }
 
 .admin-order-modal h2 {
