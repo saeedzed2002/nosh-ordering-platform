@@ -151,13 +151,18 @@ docker compose down --volumes
 
 ## Local checks
 
+Set `NOSH_E2E_ADMIN_PASSWORD` to the same untracked local seed password before
+running the browser suite when you want it to include the authenticated manager
+scenario. Without it, that one authenticated scenario is intentionally skipped;
+do not add the password to source control.
+
 ~~~powershell
 Set-Location frontend
-npm install
+npm ci
+npm run generate:api
 npm run check
 npm run test -- --run
 npm run test:e2e
-npm run generate:api
 
 Set-Location ../backend
 uv sync --group dev
@@ -192,15 +197,18 @@ assumptions, and docs/phase-1-experience-information-architecture.md for the
 planned customer/admin behavior and seed-data contract. See
 docs/phase-2-design-system.md for component and interaction conventions, and
 docs/phase-3-customer-landing.md for the dynamic landing-page contract. See
-docs/phase-5-admin-home-and-media.md for the home/media workflow and
-docs/phase-6-menu-administration.md for the menu administration contract and
-docs/phase-7-customer-menu.md for the live menu/discovery contract. See
+docs/phase-4-data-auth-media-contract.md for the durable data, authentication,
+and media contract. See docs/phase-5-admin-home-and-media.md for the home/media
+workflow and docs/phase-6-menu-administration.md for the menu administration
+contract and docs/phase-7-customer-menu.md for the live menu/discovery contract.
+See
 docs/phase-8-trustworthy-cart.md for the cart and server-quote contract, and
 docs/phase-9-checkout-and-confirmation.md for order transaction and receipt
 boundaries. See docs/phase-10-customer-tracker-and-lifecycle.md for the
 tracking and lifecycle boundaries, and docs/phase-11-admin-order-desk.md for
 the protected operational order-desk contract. See
 docs/phase-12-customer-accounts.md for account ownership, reorder, and privacy
+boundaries, docs/phase-13-reviews.md for eligible review and moderation
 boundaries, docs/phase-14-operations.md for restaurant operations, and
 docs/phase-15-quality-accessibility.md for browser-test execution and the
 quality/accessibility scope. See docs/phase-16-mobile-contract.md for the
