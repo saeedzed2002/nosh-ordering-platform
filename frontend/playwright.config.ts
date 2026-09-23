@@ -5,7 +5,7 @@ const executablePath = process.env.NOSH_E2E_BROWSER_PATH;
 export default defineConfig({
   forbidOnly: Boolean(process.env.CI),
   fullyParallel: false,
-  reporter: "list",
+  reporter: process.env.GITHUB_ACTIONS ? "github" : "list",
   retries: process.env.CI ? 1 : 0,
   testDir: "./e2e",
   timeout: 30_000,

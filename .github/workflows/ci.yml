@@ -71,6 +71,13 @@ jobs:
       - run: npm run test:e2e
         working-directory: frontend
       - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-test-results
+          path: frontend/test-results
+          if-no-files-found: ignore
+          retention-days: 7
+      - if: failure()
         run: docker compose logs --no-color
       - if: always()
         run: docker compose down --remove-orphans
