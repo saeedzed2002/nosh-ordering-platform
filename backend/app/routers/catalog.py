@@ -279,7 +279,7 @@ def quote_customer_cart(
     here so that a stale local cart cannot become an order later.
     """
 
-    location = resolve_published_location(session, None)
+    location = resolve_published_location(session, request.location_slug)
     return quote_cart(session, request.lines, location)
 
 

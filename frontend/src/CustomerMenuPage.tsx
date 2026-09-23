@@ -5,6 +5,7 @@ import {
   CircleAlert,
   Clock3,
   Leaf,
+  Heart,
   LoaderCircle,
   Search,
   ShieldCheck,
@@ -13,12 +14,13 @@ import {
   UtensilsCrossed,
   X,
 } from "lucide-react";
-import { useDeferredValue, useMemo, useState, useTransition } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { useDeferredValue, useEffect, useMemo, useState, useTransition } from "react";
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 
 import { Button } from "./components/ui/Button";
 import { QuantityStepper } from "./components/ui/QuantityStepper";
 import { CustomerCartDrawer, useCustomerCart } from "./customerCart";
+import { useCustomerAccount } from "./customerAccount";
 import {
   availabilityLabel,
   customerMediaUrl,
@@ -60,6 +62,7 @@ function customerMenuPath(slug: string): string {
 
 export function CustomerSiteHeader() {
   const { cartCount, openCart } = useCustomerCart();
+  const { ready, session } = useCustomerAccount();
   return (
     <header className="site-header customer-site-header">
       <Link className="wordmark" to="/" aria-label="Nosh home">Nosh<span>.</span></Link>
@@ -71,6 +74,7 @@ export function CustomerSiteHeader() {
         </ul>
       </nav>
       <div className="customer-header-actions">
+        {ready ? <Link className="header-account-link" to={session ? "/account" : "/account/sign-in"}>{session ? session.user.display_name.split(" ")[0] : "Account"}</Link> : null}
         <Button className="header-cart-button" size="compact" variant="secondary" onClick={openCart}>
           <ShoppingBag aria-hidden="true" /> Cart <span aria-label={`${cartCount} items in cart`}>{cartCount}</span>
         </Button>
@@ -324,13 +328,52 @@ function RelatedDishes({ items, preparationMinutes }: { items: CustomerMenuItem[
 
 function CustomerDishOrderPanel({ item }: { item: CustomerMenuItem }) {
   const { addLine, isUpdating } = useCustomerCart();
+  const { ready, request, session } = useCustomerAccount();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [selections, setSelections] = useState<CustomerSelections>({});
   const [quantity, setQuantity] = useState(1);
   const [note, setNote] = useState("");
   const [formIssues, setFormIssues] = useState<Record<string, string>>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [favoriteError, setFavoriteError] = useState<string | null>(null);
+  const [favoriteUpdating, setFavoriteUpdating] = useState(false);
   const available = item.availability === "available";
   const previewPrice = previewCustomerPrice(item, selections);
+
+  useEffect(() => {
+    if (!session) {
+      setIsFavorite(false);
+      return;
+    }
+    const controller = new AbortController();
+    void request<Array<{ slug: string }>>("/api/v1/account/favorites", { signal: controller.signal })
+      .then((favorites) => { if (!controller.signal.aborted) setIsFavorite(favorites.some((favorite) => favorite.slug === item.slug)); })
+      .catch(() => { if (!controller.signal.aborted) setFavoriteError("Your saved dishes could not be checked."); });
+    return () => controller.abort();
+  }, [item.slug, request, session]);
+
+  const toggleFavorite = async () => {
+    if (!session) {
+      navigate("/account/sign-in", { state: { from: location } });
+      return;
+    }
+    setFavoriteError(null);
+    setFavoriteUpdating(true);
+    try {
+      if (isFavorite) {
+        await request<void>(`/api/v1/account/favorites/${item.slug}`, { method: "DELETE" });
+      } else {
+        await request(`/api/v1/account/favorites/${item.slug}`, { method: "PUT" });
+      }
+      setIsFavorite((current) => !current);
+    } catch (requestError) {
+      setFavoriteError(requestError instanceof Error ? requestError.message : "This dish could not be saved.");
+    } finally {
+      setFavoriteUpdating(false);
+    }
+  };
 
   const toggleOption = (groupId: string, optionId: string, maximumSelections: number, forceSelection: boolean) => {
     setFormIssues((current) => ({ ...current, [groupId]: "" }));
@@ -407,6 +450,8 @@ function CustomerDishOrderPanel({ item }: { item: CustomerMenuItem }) {
           <small>{quantity > 1 ? `${formatCustomerPrice(previewPrice, item.currency_code)} each` : "Price updates as you make choices"}</small>
           <div><span>Quantity</span><QuantityStepper disabled={!available || isUpdating} max={20} value={quantity} onValueChange={setQuantity} /></div>
           <Button disabled={!available || isUpdating} loading={isUpdating} onClick={() => void addToCart()}>{available ? "Add to cart" : "Unavailable today"} <ShoppingBag aria-hidden="true" /></Button>
+          <Button disabled={!ready || favoriteUpdating} loading={favoriteUpdating} variant="secondary" onClick={() => void toggleFavorite()}><Heart aria-hidden="true" fill={isFavorite ? "currentColor" : "none"} /> {isFavorite ? "Saved to favorites" : "Save to favorites"}</Button>
+          {favoriteError ? <p className="customer-order-issue" role="alert">{favoriteError}</p> : null}
           <p>{available ? "The total is confirmed by the kitchen before this is saved in your cart." : "Check back when the kitchen makes this dish available again."}</p>
         </aside>
       </div>

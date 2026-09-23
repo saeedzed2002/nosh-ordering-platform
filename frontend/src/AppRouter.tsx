@@ -11,6 +11,13 @@ import { OrderDeskPage } from "./admin/OrderDeskPage";
 import { AdminSessionProvider, useAdminSession } from "./admin/session";
 import App from "./App";
 import { CustomerCartProvider } from "./customerCart";
+import { CustomerAccountProvider } from "./customerAccount";
+import {
+  CustomerAccountGuard,
+  CustomerAccountPage,
+  CustomerAccountSignInPage,
+  CustomerAccountSignUpPage,
+} from "./CustomerAccountPages";
 import { CustomerCheckoutPage, CustomerOrderConfirmationPage } from "./CustomerCheckoutPage";
 import { CustomerMenuItemPage, CustomerMenuPage } from "./CustomerMenuPage";
 import { AboutPage, LocationsPage, NotFoundPage } from "./SitePages";
@@ -29,14 +36,20 @@ function AdminGuard() {
 export function AppRouter() {
   return (
     <BrowserRouter>
-      <CustomerCartProvider>
-        <AdminSessionProvider>
-          <Routes>
+      <CustomerAccountProvider>
+        <CustomerCartProvider>
+          <AdminSessionProvider>
+            <Routes>
           <Route path="/" element={<App />} />
           <Route path="/menu" element={<CustomerMenuPage />} />
           <Route path="/menu/:slug" element={<CustomerMenuItemPage />} />
           <Route path="/checkout" element={<CustomerCheckoutPage />} />
           <Route path="/orders/:publicReference" element={<CustomerOrderConfirmationPage />} />
+          <Route path="/account/sign-in" element={<CustomerAccountSignInPage />} />
+          <Route path="/account/sign-up" element={<CustomerAccountSignUpPage />} />
+          <Route element={<CustomerAccountGuard />}>
+            <Route path="/account" element={<CustomerAccountPage />} />
+          </Route>
           <Route path="/locations" element={<LocationsPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/admin/sign-in" element={<AdminSignInPage />} />
@@ -50,9 +63,10 @@ export function AppRouter() {
             <Route path="/admin/orders" element={<OrderDeskPage />} />
           </Route>
           <Route path="*" element={<NotFoundPage />} />
-          </Routes>
-        </AdminSessionProvider>
-      </CustomerCartProvider>
+            </Routes>
+          </AdminSessionProvider>
+        </CustomerCartProvider>
+      </CustomerAccountProvider>
     </BrowserRouter>
   );
 }

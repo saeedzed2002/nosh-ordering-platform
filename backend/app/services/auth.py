@@ -155,3 +155,27 @@ def require_roles(*allowed_roles: RoleCode):
         return current_user
 
     return enforce_role
+
+
+CustomerCurrentUserDep = Annotated[User, Depends(require_roles(RoleCode.CUSTOMER))]
+
+
+def get_optional_customer(
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)],
+    session: SessionDep,
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> User | None:
+    """Return a customer for an optional checkout bearer token."""
+
+    if credentials is None:
+        return None
+    user = get_user_from_token(credentials.credentials, "access", session, settings)
+    if RoleCode(user.role.code) != RoleCode.CUSTOMER:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only customer accounts can be attached to a customer order.",
+        )
+    return user
+
+
+OptionalCustomerDep = Annotated[User | None, Depends(get_optional_customer)]

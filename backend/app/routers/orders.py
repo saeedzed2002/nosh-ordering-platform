@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException, Path, Response, status
 
 from app.db.session import SessionDep
 from app.schemas.orders import CheckoutRequest, OrderReceiptResponse
+from app.services.auth import OptionalCustomerDep
 from app.services.checkout import (
     create_order,
     order_by_public_reference,
@@ -23,8 +24,9 @@ def checkout_customer_order(
     request: CheckoutRequest,
     response: Response,
     session: SessionDep,
+    customer: OptionalCustomerDep,
 ) -> OrderReceiptResponse:
-    order, replayed = create_order(session, request)
+    order, replayed = create_order(session, request, customer)
     if replayed:
         response.status_code = status.HTTP_200_OK
     return serialize_order(order)

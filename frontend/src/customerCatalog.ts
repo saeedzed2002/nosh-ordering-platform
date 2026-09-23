@@ -180,8 +180,13 @@ export async function readCustomerMenuItem(
 export function quoteCustomerCart(
   lines: CustomerCartLineInput[],
   signal: AbortSignal,
+  locationSlug: string | null = null,
 ): Promise<CustomerCartQuote> {
-  return postCatalogJson<CustomerCartQuote>("/api/v1/catalog/cart/quote", { lines }, signal);
+  return postCatalogJson<CustomerCartQuote>(
+    "/api/v1/catalog/cart/quote",
+    { lines, location_slug: locationSlug },
+    signal,
+  );
 }
 
 function useResource<T>(

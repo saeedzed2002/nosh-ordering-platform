@@ -1,8 +1,11 @@
 # Nosh backend
 
-The backend now contains the Phase 4 data, media, and role-based staff-authentication
-foundation. Checkout, orders, customer accounts, and administrative editing screens
-remain later roadmap work.
+The backend now contains the Phase 4 durable data/media foundation through the
+Phase 12 customer-account workflow. It supports the local checkout and order
+lifecycle, role-protected administration, customer signup/sign-in, saved
+addresses, favorites, owned order history, and server-revalidated reorder.
+Real payments, delivery integrations, password recovery, and guest-order
+claiming remain outside this local demo.
 
 ## Apply the local schema and seed the demo catalog
 
@@ -17,5 +20,6 @@ uv run python -m app.commands.seed
 ~~~
 
 The command can be run again safely. It creates one fictional location, roles,
-five deterministic users, six categories, sixteen dishes, options, allergens,
-collections, home content, and generated development-only media placeholders.
+five deterministic users (including two customer identities), six categories,
+sixteen dishes, options, allergens, collections, home content, and committed
+development-only demo-food media.

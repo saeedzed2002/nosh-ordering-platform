@@ -29,6 +29,7 @@ class CartLineRequest(BaseModel):
 
 class CartQuoteRequest(BaseModel):
     lines: list[CartLineRequest] = Field(min_length=1, max_length=30)
+    location_slug: str | None = Field(default=None, pattern=r"^[a-z0-9-]+$")
 
     @model_validator(mode="after")
     def reject_duplicate_line_ids(self) -> "CartQuoteRequest":

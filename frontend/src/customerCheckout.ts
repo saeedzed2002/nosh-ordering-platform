@@ -75,11 +75,16 @@ async function readError(response: Response): Promise<string> {
 export async function submitCustomerOrder(
   request: CustomerCheckoutRequest,
   signal: AbortSignal,
+  accessToken: string | null = null,
 ): Promise<CustomerOrderReceipt> {
+  const headers = new Headers({ "Content-Type": "application/json" });
+  if (accessToken) {
+    headers.set("Authorization", `Bearer ${accessToken}`);
+  }
   const response = await fetch(`${apiBaseUrl}/api/v1/orders/checkout`, {
     body: JSON.stringify(request),
     cache: "no-store",
-    headers: { "Content-Type": "application/json" },
+    headers,
     method: "POST",
     signal,
   });

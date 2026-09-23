@@ -13,7 +13,8 @@ foundation, the Phase 5 local administration workflow, the Phase 6 menu
 administration workflow, the Phase 7 customer menu/discovery workflow, and the
 Phase 8 trustworthy-cart workflow, and the Phase 9 checkout-and-confirmation
 workflow, the Phase 10 customer-tracker-and-order-lifecycle workflow, and the
-Phase 11 staff-order-desk workflow:
+Phase 11 staff-order-desk workflow, and the Phase 12 customer-account
+workflow:
 
 - independent React/Vite and FastAPI applications;
 - a PostgreSQL-backed readiness endpoint;
@@ -62,11 +63,19 @@ Phase 11 staff-order-desk workflow:
   controlled issue reasons, and per-location online-ordering, preparation, and
   active-order-capacity controls. A paused, off, or capacity-full kitchen is
   enforced by the server during checkout; it is not merely a browser state.
+- Phase 12 adds customer signup/sign-in, refresh-backed account sessions,
+  protected profile and saved-address management, favorites, owned order
+  history, and an editable reorder flow. A customer checkout is linked to its
+  account without exposing that ownership in the public receipt. Reorder never
+  copies a historical total: the server rebuilds the saved lines and validates
+  current publication, options, availability, location ordering state, and
+  price before a cart can be restored.
 
-Customer menu discovery, dish customization, the local cart, checkout, and
-order tracking and the staff order desk are implemented. Customer accounts,
-real payments, real delivery integration, and customer reviews are not yet
-implemented and must not be represented as working product flows.
+Customer menu discovery, dish customization, the local cart, checkout, order
+tracking, the staff order desk, and customer accounts are implemented. Real
+payments, real delivery integration, customer reviews, password recovery, and
+claiming older guest orders are not implemented and must not be represented as
+working product flows.
 
 ## Local run
 
@@ -136,6 +145,10 @@ uv run pytest -q
 - A public order reference is not an authorization credential. The public
   tracker excludes private recipient, delivery-address, and instruction
   snapshots while exposing only the restaurant's fictional local-demo contact.
+- Customer account routes require a customer-role token. Address, favorite,
+  history, and reorder lookups filter by the authenticated customer in the
+  server query; a foreign account object returns the same generic `404` as a
+  missing one.
 - The `origin` remote is connected to the private GitHub repository. Local
   validation remains distinct from GitHub Actions and production evidence.
 
@@ -151,4 +164,6 @@ docs/phase-8-trustworthy-cart.md for the cart and server-quote contract, and
 docs/phase-9-checkout-and-confirmation.md for order transaction and receipt
 boundaries. See docs/phase-10-customer-tracker-and-lifecycle.md for the
 tracking and lifecycle boundaries, and docs/phase-11-admin-order-desk.md for
-the protected operational order-desk contract.
+the protected operational order-desk contract. See
+docs/phase-12-customer-accounts.md for account ownership, reorder, and privacy
+boundaries.

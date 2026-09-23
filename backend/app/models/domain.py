@@ -19,6 +19,7 @@ from sqlalchemy import (
     UniqueConstraint,
     Uuid,
     func,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -133,6 +134,63 @@ class User(TimestampedUUIDMixin, Base):
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     role: Mapped[Role] = relationship(back_populates="users")
+    customer_addresses: Mapped[list[CustomerAddress]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    customer_favorites: Mapped[list[CustomerFavorite]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    customer_orders: Mapped[list[Order]] = relationship(
+        back_populates="customer", foreign_keys="Order.customer_id"
+    )
+
+
+class CustomerAddress(TimestampedUUIDMixin, Base):
+    __tablename__ = "customer_addresses"
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id",
+            "label",
+            name="uq_customer_addresses_customer_address_label",
+        ),
+        Index(
+            "uq_customer_addresses_default_per_user",
+            "user_id",
+            unique=True,
+            postgresql_where=text("is_default"),
+            sqlite_where=text("is_default"),
+        ),
+    )
+
+    user_id: Mapped[UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    label: Mapped[str] = mapped_column(String(80), nullable=False)
+    recipient_name: Mapped[str] = mapped_column(String(120), nullable=False)
+    phone: Mapped[str] = mapped_column(String(30), nullable=False)
+    address_text: Mapped[str] = mapped_column(Text, nullable=False)
+    is_default: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    user: Mapped[User] = relationship(back_populates="customer_addresses")
+
+
+class CustomerFavorite(TimestampedUUIDMixin, Base):
+    __tablename__ = "customer_favorites"
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id",
+            "menu_item_id",
+            name="uq_customer_favorites_customer_favorite_item",
+        ),
+    )
+
+    user_id: Mapped[UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    menu_item_id: Mapped[UUID] = mapped_column(
+        ForeignKey("menu_items.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    user: Mapped[User] = relationship(back_populates="customer_favorites")
+    menu_item: Mapped[MenuItem] = relationship()
 
 
 class Location(TimestampedUUIDMixin, Base):
@@ -600,6 +658,7 @@ class Order(TimestampedUUIDMixin, Base):
         ),
         Index("ix_orders_status_created_at", "status", "created_at"),
         Index("ix_orders_location_created_at", "location_id", "created_at"),
+        Index("ix_orders_customer_created_at", "customer_id", "created_at"),
     )
 
     public_reference: Mapped[str] = mapped_column(
@@ -611,6 +670,9 @@ class Order(TimestampedUUIDMixin, Base):
     request_fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
     location_id: Mapped[UUID] = mapped_column(
         ForeignKey("locations.id"), nullable=False, index=True
+    )
+    customer_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), index=True
     )
     promotion_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("promotions.id", ondelete="SET NULL"), index=True
@@ -637,6 +699,9 @@ class Order(TimestampedUUIDMixin, Base):
     promotion_discount_minor: Mapped[int] = mapped_column(Integer, nullable=False)
     total_minor: Mapped[int] = mapped_column(Integer, nullable=False)
     location: Mapped[Location] = relationship()
+    customer: Mapped[User | None] = relationship(
+        back_populates="customer_orders", foreign_keys=[customer_id]
+    )
     promotion: Mapped[Promotion | None] = relationship()
     items: Mapped[list[OrderItem]] = relationship(
         back_populates="order", cascade="all, delete-orphan"

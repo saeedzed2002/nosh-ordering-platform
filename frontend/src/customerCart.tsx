@@ -27,25 +27,30 @@ type CustomerCartContextValue = {
   isOpen: boolean;
   isUpdating: boolean;
   lines: CustomerCartLineInput[];
+  locationSlug: string | null;
   openCart: () => void;
   quote: CustomerCartQuote | null;
   removeLine: (clientLineId: string) => Promise<void>;
+  replaceLines: (lines: CustomerCartLineInput[], locationSlug: string) => Promise<void>;
   setOpen: (open: boolean) => void;
   updateQuantity: (clientLineId: string, quantity: number) => Promise<void>;
 };
 
 const CustomerCartContext = createContext<CustomerCartContextValue | null>(null);
 
-function storedLines(): CustomerCartLineInput[] {
+type StoredCart = { lines: CustomerCartLineInput[]; locationSlug: string | null };
+
+function storedCart(): StoredCart {
   try {
     const value = JSON.parse(window.localStorage.getItem(storageKey) ?? "null") as {
       lines?: unknown;
+      locationSlug?: unknown;
       version?: unknown;
     } | null;
     if (value?.version !== storageVersion || !Array.isArray(value.lines)) {
-      return [];
+      return { lines: [], locationSlug: null };
     }
-    return value.lines.flatMap((line): CustomerCartLineInput[] => {
+    const lines = value.lines.flatMap((line): CustomerCartLineInput[] => {
       if (
         !line || typeof line !== "object" ||
         typeof (line as CustomerCartLineInput).client_line_id !== "string" ||
@@ -64,17 +69,23 @@ function storedLines(): CustomerCartLineInput[] {
         quantity: Math.min(20, Math.max(1, candidate.quantity)),
       }];
     });
+    return {
+      lines,
+      locationSlug: typeof value.locationSlug === "string" && /^[a-z0-9-]+$/.test(value.locationSlug)
+        ? value.locationSlug
+        : null,
+    };
   } catch {
-    return [];
+    return { lines: [], locationSlug: null };
   }
 }
 
-function saveLines(lines: CustomerCartLineInput[]) {
+function saveCart(lines: CustomerCartLineInput[], locationSlug: string | null) {
   if (!lines.length) {
     window.localStorage.removeItem(storageKey);
     return;
   }
-  window.localStorage.setItem(storageKey, JSON.stringify({ lines, version: storageVersion }));
+  window.localStorage.setItem(storageKey, JSON.stringify({ lines, locationSlug, version: storageVersion }));
 }
 
 function errorMessage(error: unknown): string {
@@ -82,7 +93,9 @@ function errorMessage(error: unknown): string {
 }
 
 export function CustomerCartProvider({ children }: { children: ReactNode }) {
-  const [lines, setLines] = useState<CustomerCartLineInput[]>(storedLines);
+  const [stored] = useState<StoredCart>(storedCart);
+  const [lines, setLines] = useState<CustomerCartLineInput[]>(stored.lines);
+  const [locationSlug, setLocationSlug] = useState<string | null>(stored.locationSlug);
   const [quote, setQuote] = useState<CustomerCartQuote | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isOpen, setOpen] = useState(false);
@@ -93,9 +106,11 @@ export function CustomerCartProvider({ children }: { children: ReactNode }) {
   const quoteAndCommit = useCallback(async (
     nextLines: CustomerCartLineInput[],
     successNotice: ToastMessage | null,
+    nextLocationSlug = locationSlug,
   ) => {
     if (!nextLines.length) {
       setLines([]);
+      setLocationSlug(null);
       setQuote(null);
       setError(null);
       if (successNotice) {
@@ -106,8 +121,13 @@ export function CustomerCartProvider({ children }: { children: ReactNode }) {
     setError(null);
     setIsUpdating(true);
     try {
-      const nextQuote = await quoteCustomerCart(nextLines, new AbortController().signal);
+      const nextQuote = await quoteCustomerCart(
+        nextLines,
+        new AbortController().signal,
+        nextLocationSlug,
+      );
       setLines(nextLines);
+      setLocationSlug(nextLocationSlug);
       setQuote(nextQuote);
       if (successNotice) {
         setNotice(successNotice);
@@ -119,11 +139,11 @@ export function CustomerCartProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsUpdating(false);
     }
-  }, []);
+  }, [locationSlug]);
 
   useEffect(() => {
-    saveLines(lines);
-  }, [lines]);
+    saveCart(lines, locationSlug);
+  }, [lines, locationSlug]);
 
   useEffect(() => {
     if (restoredQuoteAttempted.current || !lines.length) {
@@ -131,7 +151,7 @@ export function CustomerCartProvider({ children }: { children: ReactNode }) {
     }
     const controller = new AbortController();
     setIsUpdating(true);
-    void quoteCustomerCart(lines, controller.signal)
+    void quoteCustomerCart(lines, controller.signal, locationSlug)
       .then((nextQuote) => {
         if (!controller.signal.aborted) {
           setQuote(nextQuote);
@@ -150,7 +170,7 @@ export function CustomerCartProvider({ children }: { children: ReactNode }) {
         }
       });
     return () => controller.abort();
-  }, [lines]);
+  }, [lines, locationSlug]);
 
   const addLine = useCallback(async (line: CustomerCartLineInput) => {
     await quoteAndCommit([...lines, line], {
@@ -175,8 +195,20 @@ export function CustomerCartProvider({ children }: { children: ReactNode }) {
     });
   }, [lines, quoteAndCommit]);
 
+  const replaceLines = useCallback(async (
+    nextLines: CustomerCartLineInput[],
+    nextLocationSlug: string,
+  ) => {
+    await quoteAndCommit(nextLines, {
+      description: "Prices and choices have been checked against the kitchen's current menu.",
+      title: "Order ready to edit",
+    }, nextLocationSlug);
+    setOpen(false);
+  }, [quoteAndCommit]);
+
   const clearCart = useCallback(() => {
     setLines([]);
+    setLocationSlug(null);
     setQuote(null);
     setError(null);
     setOpen(false);
@@ -190,12 +222,14 @@ export function CustomerCartProvider({ children }: { children: ReactNode }) {
     isOpen,
     isUpdating,
     lines,
+    locationSlug,
     openCart: () => setOpen(true),
     quote,
     removeLine,
+    replaceLines,
     setOpen,
     updateQuantity,
-  }), [addLine, clearCart, error, isOpen, isUpdating, lines, quote, removeLine, updateQuantity]);
+  }), [addLine, clearCart, error, isOpen, isUpdating, lines, locationSlug, quote, removeLine, replaceLines, updateQuantity]);
 
   return (
     <Toast.Provider duration={4500} swipeDirection="right">

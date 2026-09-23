@@ -14,11 +14,12 @@ import {
   Truck,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 
 import { Button } from "./components/ui/Button";
 import { CustomerSiteFooter, CustomerSiteHeader } from "./CustomerMenuPage";
 import { useCustomerCart } from "./customerCart";
+import { type CustomerAddress, useCustomerAccount } from "./customerAccount";
 import {
   readCustomerOrder,
   submitCustomerOrder,
@@ -117,14 +118,19 @@ function CheckoutSummary() {
 }
 
 export function CustomerCheckoutPage() {
-  const { clearCart, isUpdating, lines, quote } = useCustomerCart();
+  const { clearCart, isUpdating, lines, locationSlug: cartLocationSlug, quote } = useCustomerCart();
+  const { request, session } = useCustomerAccount();
   const { data: snapshot, status } = useCustomerCatalog();
+  const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [form, setForm] = useState<CheckoutForm>(initialForm);
+  const [savedAddresses, setSavedAddresses] = useState<CustomerAddress[]>([]);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const idempotencyKey = useRef(checkoutIdempotencyKey());
   const locations = snapshot?.locations ?? emptyLocations;
+  const preferredLocationSlug = cartLocationSlug ?? searchParams.get("location");
   const selectedLocation = useMemo(
     () => locations.find((location) => location.slug === form.locationSlug) ?? null,
     [form.locationSlug, locations],
@@ -132,9 +138,27 @@ export function CustomerCheckoutPage() {
 
   useEffect(() => {
     if (!form.locationSlug && locations[0]) {
-      setForm((current) => ({ ...current, locationSlug: locations[0].slug }));
+      const preferredLocation = locations.find((location) => location.slug === preferredLocationSlug);
+      setForm((current) => ({ ...current, locationSlug: preferredLocation?.slug ?? locations[0].slug }));
     }
-  }, [form.locationSlug, locations]);
+  }, [form.locationSlug, locations, preferredLocationSlug]);
+
+  useEffect(() => {
+    if (!session) {
+      setSavedAddresses([]);
+      return;
+    }
+    setForm((current) => ({
+      ...current,
+      recipientEmail: current.recipientEmail || session.user.email,
+      recipientName: current.recipientName || session.user.display_name,
+    }));
+    const controller = new AbortController();
+    void request<CustomerAddress[]>("/api/v1/account/addresses", { signal: controller.signal })
+      .then((addresses) => { if (!controller.signal.aborted) setSavedAddresses(addresses); })
+      .catch(() => { if (!controller.signal.aborted) setSavedAddresses([]); });
+    return () => controller.abort();
+  }, [request, session]);
 
   const updateForm = <Key extends keyof CheckoutForm>(key: Key, value: CheckoutForm[Key]) => {
     setForm((current) => ({ ...current, [key]: value }));
@@ -176,6 +200,7 @@ export function CustomerCheckoutPage() {
           lines,
         },
         new AbortController().signal,
+        session?.access_token ?? null,
       );
       clearCart();
       navigate(`/orders/${receipt.public_reference}`, { replace: true });
@@ -247,7 +272,8 @@ export function CustomerCheckoutPage() {
                 <label className="customer-checkout-field">Phone<input required autoComplete="tel" inputMode="tel" maxLength={30} minLength={7} value={form.recipientPhone} onChange={(event) => updateForm("recipientPhone", event.target.value)} /></label>
               </div>
               <label className="customer-checkout-field">Email<input required autoComplete="email" maxLength={320} type="email" value={form.recipientEmail} onChange={(event) => updateForm("recipientEmail", event.target.value)} /></label>
-              {form.fulfillmentMethod === "delivery" ? <label className="customer-checkout-field">Delivery address<textarea required maxLength={500} value={form.deliveryAddress} onChange={(event) => updateForm("deliveryAddress", event.target.value)} /></label> : null}
+              {session ? <p className="customer-checkout-account-note">This order will be saved to {session.user.display_name}'s account.</p> : <p className="customer-checkout-account-note">Want order history and saved addresses? <Link state={{ from: { pathname: "/checkout", search: location.search } }} to="/account/sign-in">Sign in</Link>.</p>}
+              {form.fulfillmentMethod === "delivery" ? <><label className="customer-checkout-field">Delivery address<textarea required maxLength={500} value={form.deliveryAddress} onChange={(event) => updateForm("deliveryAddress", event.target.value)} /></label>{savedAddresses.length ? <div className="customer-saved-address-picker"><span>Saved address</span>{savedAddresses.map((address) => <Button key={address.id} size="compact" variant="secondary" onClick={() => setForm((current) => ({ ...current, deliveryAddress: address.address_text, recipientName: address.recipient_name, recipientPhone: address.phone }))}>{address.label}{address.is_default ? " · Default" : ""}</Button>)}</div> : null}</> : null}
               <label className="customer-checkout-field">Instructions for the kitchen<textarea maxLength={500} placeholder="Optional: access, pickup, or kitchen note" value={form.fulfillmentInstructions} onChange={(event) => updateForm("fulfillmentInstructions", event.target.value)} /></label>
             </fieldset>
 

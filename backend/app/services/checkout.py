@@ -22,6 +22,7 @@ from app.models import (
     OrderStatusEvent,
     Promotion,
     PromotionKind,
+    User,
 )
 from app.schemas.orders import (
     CheckoutRequest,
@@ -187,11 +188,15 @@ def public_reference() -> str:
     return f"N-{uuid4().hex[:16].upper()}"
 
 
-def create_order(session: Session, request: CheckoutRequest) -> tuple[Order, bool]:
+def create_order(
+    session: Session, request: CheckoutRequest, customer: User | None = None
+) -> tuple[Order, bool]:
     fingerprint = request_fingerprint(request)
     existing = order_by_idempotency_key(session, request.idempotency_key)
     if existing is not None:
-        if existing.request_fingerprint != fingerprint:
+        if existing.request_fingerprint != fingerprint or existing.customer_id != (
+            customer.id if customer is not None else None
+        ):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="This checkout key has already been used for a different order.",
@@ -247,6 +252,7 @@ def create_order(session: Session, request: CheckoutRequest) -> tuple[Order, boo
         idempotency_key=request.idempotency_key,
         request_fingerprint=fingerprint,
         location_id=location.id,
+        customer_id=customer.id if customer is not None else None,
         promotion_id=promotion.id if promotion is not None else None,
         status=order_status,
         fulfillment_method=fulfillment_method,
@@ -325,7 +331,11 @@ def create_order(session: Session, request: CheckoutRequest) -> tuple[Order, boo
     except IntegrityError:
         session.rollback()
         existing = order_by_idempotency_key(session, request.idempotency_key)
-        if existing is not None and existing.request_fingerprint == fingerprint:
+        if (
+            existing is not None
+            and existing.request_fingerprint == fingerprint
+            and existing.customer_id == (customer.id if customer is not None else None)
+        ):
             return existing, True
         if existing is not None:
             raise HTTPException(
