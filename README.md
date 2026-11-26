@@ -2,12 +2,24 @@
 
 Nosh is a local-first restaurant-ordering demo for one fictional brand. It combines a customer ordering journey with a role-protected operations workspace and is designed to be reproducible on a developer machine.
 
+![Nosh customer homepage with the featured kitchen dish](docs/screenshots/home.png)
+
 ## What this demonstrates
 
 - Customer menu discovery, dish configuration, a server-checked local cart, checkout, order tracking, account management, reorder, and eligible reviews.
 - An operations workspace for menu publishing, order fulfilment, promotions, restaurant settings, customer lookup, and reports.
 - Server-enforced catalogue, pricing, availability, capacity, ownership, and order-lifecycle rules rather than browser-only checks.
 - A React/Vite frontend, FastAPI backend, PostgreSQL, generated OpenAPI client declarations, and reproducible Docker Compose development.
+
+### Menu discovery
+
+![Featured dishes and availability on the Nosh menu](docs/screenshots/menu.png)
+
+### Dish details and customization
+
+![Dish details with description, price, and availability](docs/screenshots/dish.png)
+
+![Dish customization choices and cart controls](docs/screenshots/dish-customization.png)
 
 ## Scope and evidence
 
